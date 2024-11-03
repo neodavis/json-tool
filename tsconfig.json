@@ -13,7 +13,7 @@
     "esModuleInterop": true,
     "sourceMap": true,
     "declaration": false,
-    "experimentalDecorators": true,
+    "experimentalDecorators": false,
     "moduleResolution": "bundler",
     "importHelpers": true,
     "target": "ES2022",
@@ -25,8 +25,8 @@
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,
-    "strictInjectionParameters": true,
+    "strictInjectionParameters": false,
     "strictInputAccessModifiers": true,
-    "strictTemplates": true
+    "strictTemplates": false
   }
 }

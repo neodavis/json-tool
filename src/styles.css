@@ -1,1 +1,19 @@
-/* You can add global styles to this file, and also import other style files */
+@import 'tailwindcss/base.css' layer(tailwindcss);
+@import 'tailwindcss/components.css' layer(tailwindcss);
+@import 'tailwindcss/utilities.css' layer(tailwindcss);
+
+@import 'primeng/resources/themes/aura-light-blue/theme.css';
+@import 'primeng/resources/primeng.css';
+@import "primeicons/primeicons.css";
+
+.hljs-number {
+  color: blue;
+}
+
+.hljs-string {
+  color: green;
+}
+
+.hljs-punctuation {
+  color: darkgrey;
+}

@@ -1,0 +1,37 @@
+.json-table {
+  width: 100%;
+  height: calc(100vh - 150px);
+  display: block;
+  border-collapse: collapse;
+  margin-bottom: 1em;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  overflow: auto;
+  cursor: default;
+}
+
+.json-table td {
+  padding: 8px;
+  border: 1px solid #ddd;
+}
+
+.json-key {
+  font-weight: bold;
+  background-color: #f0f0f0;
+}
+
+.json-value {
+  background-color: #ffffff;
+}
+
+.empty-placeholder {
+  @apply bg-gray-50;
+
+  border: 1px solid #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: calc(100vh - 150px);
+  text-align: center;
+  vertical-align: middle;
+}

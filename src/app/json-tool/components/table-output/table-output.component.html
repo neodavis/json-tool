@@ -1,0 +1,22 @@
+@if ((flatData$ | async)?.length) {
+  <table class="json-table">
+    <tr>
+      <th>Key</th>
+      <th>Value</th>
+      <th>Type</th>
+    </tr>
+    <ng-container *ngFor="let item of flatData$ | async">
+      <tr>
+        <td class="json-key text-nowrap">{{ item.key }}</td>
+        <td class="json-value">{{ item.value ?? 'null' }}</td>
+        <td class="json-type">{{ item.value | getType }}</td>
+      </tr>
+    </ng-container>
+  </table>
+} @else {
+  <div class="empty-placeholder">
+    <span>No Value</span>
+  </div>
+}
+
+

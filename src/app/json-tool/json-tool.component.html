@@ -1,0 +1,73 @@
+<div class="flex gap-5 w-full">
+  <div class="w-1/2 flex flex-col">
+    <div class="flex gap-2 mb-2">
+      <input pInputText type="text" class="form-control w-full" [formControl]="fileNameControl" placeholder="File Name">
+      <p-button
+        size="small"
+        styleClass="w-full h-full"
+        severity="warning"
+        [icon]="PrimeIcons.SYNC"
+        [disabled]="isInputFormatted$ | async"
+        (click)="formatInput()"
+      ></p-button>
+      <p-button
+        size="small"
+        styleClass="text-nowrap w-full h-full"
+        severity="success"
+        [icon]="PrimeIcons.SAVE"
+        [disabled]="needSave$ | async"
+        (click)="save()"
+      ></p-button>
+      <p-button
+        size="small"
+        severity="secondary"
+        styleClass="w-full h-full"
+        [icon]="PrimeIcons.REPLAY"
+        (click)="undo()"
+      ></p-button>
+      <p-button
+        size="small"
+        severity="secondary"
+        styleClass="w-full h-full"
+        [icon]="PrimeIcons.REFRESH"
+        (click)="redo()"
+      ></p-button>
+    </div>
+
+    <textarea
+      pInputTextarea
+      [formControl]="jsonInputControl"
+      class="resize-none"
+      id="json-input"
+    ></textarea>
+  </div>
+
+  <div class="w-1/2 flex flex-col">
+    <div class="flex items-center gap-2 mb-2 none">
+      <p-selectButton
+        [allowEmpty]="false"
+        [options]="viewOptions"
+        [formControl]="viewOptionControl"
+        [disabled]="jsonInputControl.invalid"
+      ></p-selectButton>
+
+      <div
+        class="h-full flex items-center justify-center px-2 rounded-md w-[120px]"
+        [class]="jsonInputControl.invalid ? 'text-red-700 bg-red-200' : 'text-green-700 bg-green-200'"
+      >
+        {{ jsonInputControl.invalid ? 'JSON Invalid' : 'JSON Valid' }}
+      </div>
+
+      <p-button size="small" styleClass="h-full" class="h-full" [icon]="PrimeIcons.FILE_EXPORT"></p-button>
+    </div>
+
+    @switch (viewOptionControl.value) {
+      @case (ViewOption.Text) {
+        <app-text-output [data]="jsonInputControl.value" [invalid]="jsonInputControl.invalid"></app-text-output>
+      }
+      @case (ViewOption.Table) {
+        <app-table-output [data]="jsonInputControl.value" [invalid]="jsonInputControl.invalid"></app-table-output>
+      }
+    }
+  </div>
+</div>
