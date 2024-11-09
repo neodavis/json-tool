@@ -76,6 +76,9 @@
       @case (ViewOption.Table) {
         <app-table-output [data]="jsonInputControl.value" [invalid]="jsonInputControl.invalid"></app-table-output>
       }
+      @case (ViewOption.Tree) {
+        <app-tree-output [data]="jsonInputControl.value" [invalid]="jsonInputControl.invalid"></app-tree-output>
+      }
     }
   </div>
 </div>
