@@ -9,6 +9,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { PrimeIcons } from 'primeng/api';
 import { FileSelectEvent, FileUpload, FileUploadModule } from 'primeng/fileupload';
+import { TooltipModule } from 'primeng/tooltip';
 import { filter, map, merge, startWith, take, tap, withLatestFrom } from 'rxjs';
 import { fromPromise } from 'rxjs/internal/observable/innerFrom';
 
@@ -40,7 +41,8 @@ enum ViewOption { Text = 'Text', Table = 'Table', Tree = 'Tree' }
     TextOutputComponent,
     TableOutputComponent,
     FileUploadModule,
-    TreeOutputComponent
+    TreeOutputComponent,
+    TooltipModule
   ],
   providers: [ParserStrategyService, SaveService]
 })
@@ -50,6 +52,21 @@ export class JsonToolComponent implements AfterViewInit {
   readonly saveService = inject(SaveService);
 
   readonly viewOptions: ViewOption[] = Object.values(ViewOption) as ViewOption[]
+  readonly placeholder = {
+    "id": "1",
+    "name": "Example Item",
+    "price": 19.99,
+    "tags": [
+      {
+        "id": "tag1",
+        "name": "Sample Tag 1"
+      },
+      {
+        "id": "tag2",
+        "name": "Sample Tag 2"
+      }
+    ],
+  }
   readonly jsonInputControl = new FormControl<string>('');
   readonly needSave$ = merge(this.jsonInputControl.valueChanges, this.saveService.currentState$)
     .pipe(

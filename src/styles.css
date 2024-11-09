@@ -6,6 +6,11 @@
 @import 'primeng/resources/primeng.css';
 @import "primeicons/primeicons.css";
 
+.p-tooltip {
+  scale: 75%;
+  translate: 0 3px;
+}
+
 .hljs-number {
   color: blue;
 }
