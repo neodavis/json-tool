@@ -7,7 +7,10 @@ import { InputTextareaModule } from 'primeng/inputtextarea';
 import { Button, ButtonDirective } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectButtonModule } from 'primeng/selectbutton';
-import { filter, map, merge, startWith, tap, withLatestFrom } from 'rxjs';
+import { PrimeIcons } from 'primeng/api';
+import { FileSelectEvent, FileUpload, FileUploadModule } from 'primeng/fileupload';
+import { filter, map, merge, startWith, take, tap, withLatestFrom } from 'rxjs';
+import { fromPromise } from 'rxjs/internal/observable/innerFrom';
 
 import { JsonParser, ParserStrategyService } from '../services/json-strategy.service';
 import { UndoRedoService } from '../services/undo-redo.service';
@@ -15,7 +18,6 @@ import { schemaValidatorGetter } from '../validators/schema.validator';
 import { TextOutputComponent } from './components/text-output/text-output.component';
 import { TableOutputComponent } from './components/table-output/table-output.component';
 import { SaveService } from '../services/save.service';
-import { PrimeIcons } from 'primeng/api';
 
 enum ViewOption { Text = 'Text', Table = 'Table' }
 
@@ -35,7 +37,8 @@ enum ViewOption { Text = 'Text', Table = 'Table' }
     SelectButtonModule,
     ChipModule,
     TextOutputComponent,
-    TableOutputComponent
+    TableOutputComponent,
+    FileUploadModule
   ],
   providers: [ParserStrategyService, SaveService]
 })
@@ -129,6 +132,27 @@ export class JsonToolComponent implements AfterViewInit {
 
     if (currentState) {
       this.jsonInputControl.setValue(currentState);
+    }
+  }
+
+  importFile(fileUploadEl: FileUpload, event: FileSelectEvent) {
+    const file = event.currentFiles[0]
+    const text = file?.text()
+
+    fileUploadEl.clear();
+
+    if (file) {
+      const jsonTypeIndex = file.name.lastIndexOf('.json')
+      const txtTypeIndex = file.name.lastIndexOf('.txt')
+      const nameWithoutType = file.name.slice(0, Math.max(txtTypeIndex, jsonTypeIndex))
+
+      this.fileNameControl.setValue(nameWithoutType)
+      fromPromise(text)
+        .pipe(
+          take(1),
+          tap((text) => this.jsonInputControl.setValue(text)),
+        )
+        .subscribe();
     }
   }
 }

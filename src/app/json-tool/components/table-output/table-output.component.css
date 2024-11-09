@@ -28,6 +28,7 @@
   @apply bg-gray-50;
 
   border: 1px solid #cbd5e1;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;

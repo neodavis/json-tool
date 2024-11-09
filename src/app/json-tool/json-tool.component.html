@@ -2,6 +2,14 @@
   <div class="w-1/2 flex flex-col">
     <div class="flex gap-2 mb-2">
       <input pInputText type="text" class="form-control w-full" [formControl]="fileNameControl" placeholder="File Name">
+      <p-fileUpload
+        #uploadFile
+        mode="basic"
+        accept=".txt, .json"
+        styleClass="w-full h-full"
+        (onSelect)="importFile(uploadFile, $event)"
+        [fileLimit]="1"
+      ></p-fileUpload>
       <p-button
         size="small"
         styleClass="w-full h-full"
