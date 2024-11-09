@@ -18,8 +18,9 @@ import { schemaValidatorGetter } from '../validators/schema.validator';
 import { TextOutputComponent } from './components/text-output/text-output.component';
 import { TableOutputComponent } from './components/table-output/table-output.component';
 import { SaveService } from '../services/save.service';
+import { TreeOutputComponent } from './components/tree-output/tree-output.component';
 
-enum ViewOption { Text = 'Text', Table = 'Table' }
+enum ViewOption { Text = 'Text', Table = 'Table', Tree = 'Tree' }
 
 @Component({
   selector: 'app-json-tool',
@@ -38,7 +39,8 @@ enum ViewOption { Text = 'Text', Table = 'Table' }
     ChipModule,
     TextOutputComponent,
     TableOutputComponent,
-    FileUploadModule
+    FileUploadModule,
+    TreeOutputComponent
   ],
   providers: [ParserStrategyService, SaveService]
 })

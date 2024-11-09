@@ -14,6 +14,10 @@
   color: green;
 }
 
+.hljs-keyword {
+  color: orangered;
+}
+
 .hljs-punctuation {
   color: darkgrey;
 }
