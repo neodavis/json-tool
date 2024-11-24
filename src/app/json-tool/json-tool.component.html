@@ -1,111 +1,14 @@
-<div class="flex gap-5 w-full">
-  <div class="w-1/2 flex flex-col">
-    <div class="flex gap-2 mb-2">
-      <input
-        pInputText
-        type="text"
-        class="form-control w-full"
-        pTooltip="File Name"
-        [tooltipDisabled]="!fileNameControl.value"
-        tooltipPosition="top"
-        [formControl]="fileNameControl"
-        placeholder="File Name"
-      >
-      <p-fileUpload
-        #uploadFile
-        pTooltip="Upload File"
-        tooltipPosition="top"
-        mode="basic"
-        accept=".txt, .json"
-        styleClass="w-full h-full"
-        (onSelect)="importFile(uploadFile, $event)"
-        [fileLimit]="1"
-      ></p-fileUpload>
-      <p-button
-        size="small"
-        styleClass="w-full h-full"
-        pTooltip="Format"
-        tooltipPosition="top"
-        severity="warning"
-        [icon]="PrimeIcons.SYNC"
-        [disabled]="isInputFormatted$ | async"
-        (click)="formatInput()"
-      ></p-button>
-      <p-button
-        size="small"
-        styleClass="text-nowrap w-full h-full"
-        severity="success"
-        pTooltip="Save Changes"
-        tooltipPosition="top"
-        [icon]="PrimeIcons.SAVE"
-        [disabled]="needSave$ | async"
-        (click)="save()"
-      ></p-button>
-      <p-button
-        size="small"
-        severity="secondary"
-        pTooltip="Undo"
-        tooltipPosition="top"
-        styleClass="w-full h-full"
-        [icon]="PrimeIcons.REPLAY"
-        (click)="undo()"
-      ></p-button>
-      <p-button
-        size="small"
-        severity="secondary"
-        pTooltip="Redo"
-        tooltipPosition="top"
-        styleClass="w-full h-full"
-        [icon]="PrimeIcons.REFRESH"
-        (click)="redo()"
-      ></p-button>
+<app-json-toolbar [schemaControl]="schemaControl" [jsonInputControl]="jsonInputControl"></app-json-toolbar>
+
+<p-splitter [gutterSize]="2" styleClass="h-[calc(100vh-70px)]">
+  <ng-template pTemplate>
+    <div class="flex flex-col h-full w-full bg-[#2B3137] border-b border-black">
+      <app-json-editor class="block h-full" name="Schema" [control]="schemaControl"></app-json-editor>
     </div>
-
-    <textarea
-      pInputTextarea
-      [formControl]="jsonInputControl"
-      class="resize-none"
-      id="json-input"
-      [placeholder]="placeholder | json"
-    ></textarea>
-  </div>
-
-  <div class="w-1/2 flex flex-col">
-    <div class="flex items-center gap-2 mb-2 none">
-      <p-selectButton
-        [allowEmpty]="false"
-        [options]="viewOptions"
-        [formControl]="viewOptionControl"
-        [disabled]="jsonInputControl.invalid"
-      ></p-selectButton>
-
-      <div
-        class="h-full flex items-center justify-center px-2 rounded-md w-[120px]"
-        [class]="jsonInputControl.invalid ? 'text-red-700 bg-red-200' : 'text-green-700 bg-green-200'"
-      >
-        {{ jsonInputControl.invalid ? 'JSON Invalid' : 'JSON Valid' }}
-      </div>
-
-      <p-button
-        size="small"
-        styleClass="h-full"
-        class="h-full"
-        pTooltip="Export"
-        tooltipPosition="top"
-        [icon]="PrimeIcons.FILE_EXPORT"
-      ></p-button>
+  </ng-template>
+  <ng-template pTemplate>
+    <div class="flex flex-col h-full w-full bg-[#2B3137] border-b border-black">
+      <app-json-editor class="block h-full" name="Data" [control]="jsonInputControl"></app-json-editor>
     </div>
-
-    @switch (viewOptionControl.value) {
-      @case (ViewOption.Text) {
-        <app-text-output [data]="jsonInputControl.value" [invalid]="jsonInputControl.invalid"></app-text-output>
-      }
-      @case (ViewOption.Table) {
-        <app-table-output [data]="jsonInputControl.value" [invalid]="jsonInputControl.invalid"></app-table-output>
-      }
-      @case (ViewOption.Tree) {
-        <app-tree-output [data]="jsonInputControl.value" [invalid]="jsonInputControl.invalid"></app-tree-output>
-      }
-    }
-  </div>
-</div>
+  </ng-template>
+</p-splitter>

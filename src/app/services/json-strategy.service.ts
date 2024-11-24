@@ -6,32 +6,34 @@ export interface ParserStrategy {
 }
 
 @Injectable()
-export class ParserStrategyService implements ParserStrategy {
+export class ParserStrategyService {
   private _parserStrategy: ParserStrategy | null = null;
 
-  get parserStrategy(): ParserStrategy | null {
-    return this._parserStrategy;
+  parse(text: string) {
+    return this._parserStrategy?.parse(text) ?? { };
+  }
+
+  stringify(object: object): string {
+    return this._parserStrategy?.stringify(object) ?? '';
   }
 
   setParserStrategy(parserStrategy: ParserStrategy | null) {
     this._parserStrategy = parserStrategy;
   }
-
-  parse(jsonString: string): object {
-    return JSON.parse(jsonString);
-  }
-
-  stringify(jsonObject: object): string {
-    return JSON.stringify(jsonObject, null, 2);
-  }
 }
 
 export class JsonParser implements ParserStrategy {
+  private readonly tabSize: number;
+
+  constructor(tabSize: number = 2) {
+    this.tabSize = tabSize;
+  }
+
   parse(jsonString: string): object {
     return JSON.parse(jsonString);
   }
 
   stringify(jsonObject: object): string {
-    return JSON.stringify(jsonObject, null, 2);
+    return JSON.stringify(jsonObject, null, this.tabSize);
   }
 }

@@ -1,9 +1,0 @@
-#json-output {
-  @apply bg-gray-50;
-
-  cursor: default;
-  height: calc(100vh - 150px);
-  font-family: monospace;
-  font-size: 14px;
-  overflow: auto;
-}
