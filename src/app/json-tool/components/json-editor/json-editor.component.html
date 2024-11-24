@@ -1,0 +1,83 @@
+<div class="flex justify-between items-center my-2 px-8">
+  <div class="flex gap-2 items-center">
+    <h3 class="border-r border-white pr-2">{{ name }}</h3>
+
+    <p-button
+      size="small"
+      severity="warning"
+      pTooltip="Undo"
+      tooltipPosition="top"
+      styleClass="w-full h-full"
+      [icon]="PrimeIcons.REPLAY"
+      (click)="undo()"
+    ></p-button>
+
+    <p-button
+      size="small"
+      severity="warning"
+      pTooltip="Redo"
+      tooltipPosition="top"
+      styleClass="w-full h-full"
+      [icon]="PrimeIcons.REFRESH"
+      (click)="redo()"
+    ></p-button>
+
+    <p-button
+      size="small"
+      styleClass="w-full h-full"
+      pTooltip="Format"
+      tooltipPosition="top"
+      severity="help"
+      [icon]="PrimeIcons.SYNC"
+      [disabled]="(isInputFormatted$ | async) || !control.valid"
+      (click)="formatInput()"
+    ></p-button>
+
+    <p-button
+      size="small"
+      styleClass="text-nowrap w-full h-full"
+      severity="success"
+      pTooltip="Save Changes"
+      tooltipPosition="top"
+      [icon]="PrimeIcons.SAVE"
+      [disabled]="needSave$ | async"
+      (click)="save()"
+    ></p-button>
+  </div>
+  <div
+    class="h-full flex items-center justify-center py-1 rounded-md w-[150px]"
+    [pTooltip]="tooltipContent"
+    [tooltipDisabled]="control.valid"
+    tooltipPosition="bottom"
+    [ngClass]="{
+      'text-red-300 bg-red-700': control.invalid,
+      'text-green-300 bg-green-700': control.valid,
+      'text-blue-300 bg-blue-700': control.pending
+    }"
+  >
+    @if (control.invalid) {
+      {{ name }} Invalid
+    } @else if (control.pending) {
+      Validating
+    } @else {
+      {{ name }} Valid
+    }
+  </div>
+</div>
+
+<ngx-monaco-editor
+  class="!h-full"
+  [options]="editorOptions"
+  [formControl]="control"
+  (onInit)="editorInit($event)"
+></ngx-monaco-editor>
+
+<ng-template #tooltipContent>
+  <ul>
+    @for (error of control.errors | keyvalue; let index = $index; track error.key) {
+      <li>
+        {{ index + 1 }}. {{ error.value }}
+      </li>
+    }
+  </ul>
+</ng-template>
