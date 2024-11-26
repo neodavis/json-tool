@@ -1,6 +1,9 @@
 <div class="flex justify-between items-center my-2 px-8">
   <div class="flex gap-2 items-center">
-    <h3 class="border-r border-white pr-2">{{ name }}</h3>
+    <div class="border-r border-stone-400 pr-2">
+      <h3>{{ name }}</h3>
+      <p class="text-xs opacity-60">{{ description }}</p>
+    </div>
 
     <p-button
       size="small"
@@ -39,13 +42,17 @@
       severity="success"
       pTooltip="Save Changes"
       tooltipPosition="top"
-      [icon]="PrimeIcons.SAVE"
-      [disabled]="needSave$ | async"
+      [icon]="(countdown$ | async) === 0 ? PrimeIcons.SAVE : null"
+      [disabled]="suppressSave$ | async"
       (click)="save()"
-    ></p-button>
+    >
+      @if (countdown$ | async; as countdown) {
+        {{ countdown }}
+      }
+    </p-button>
   </div>
   <div
-    class="h-full flex items-center justify-center py-1 rounded-md w-[150px]"
+    class="h-full flex items-center justify-center py-1 rounded-md w-[100px] transition duration-500 cursor-default"
     [pTooltip]="tooltipContent"
     [tooltipDisabled]="control.valid"
     tooltipPosition="bottom"
@@ -56,11 +63,11 @@
     }"
   >
     @if (control.invalid) {
-      {{ name }} Invalid
+      Invalid
     } @else if (control.pending) {
       Validating
     } @else {
-      {{ name }} Valid
+      Valid
     }
   </div>
 </div>
@@ -69,7 +76,7 @@
   class="!h-full"
   [options]="editorOptions"
   [formControl]="control"
-  (onInit)="editorInit($event)"
+  (onInit)="editorInit()"
 ></ngx-monaco-editor>
 
 <ng-template #tooltipContent>

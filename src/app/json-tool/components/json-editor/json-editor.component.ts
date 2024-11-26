@@ -6,7 +6,7 @@ import { EditorComponent } from 'ngx-monaco-editor-v2';
 import { TooltipModule } from 'primeng/tooltip';
 import { PrimeIcons } from 'primeng/api';
 import { Button } from 'primeng/button';
-import { map, merge, Observable, startWith, withLatestFrom } from 'rxjs';
+import { debounceTime, filter, map, merge, Observable, skip, startWith, tap, withLatestFrom } from 'rxjs';
 
 import { UndoRedoService } from '../../../services/undo-redo.service';
 import { ParserStrategyService } from '../../../services/json-strategy.service';
@@ -18,18 +18,21 @@ import { SaveService } from '../../../services/save.service';
   imports: [CommonModule, ReactiveFormsModule, EditorComponent, TooltipModule, Button],
   templateUrl: './json-editor.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [SaveService, UndoRedoService],
 })
 export class JsonEditorComponent implements OnInit {
   @Input({ required: true }) name!: string
+  @Input({ required: true }) description!: string
   @Input({ required: true }) control!: FormControl;
 
-  needSave$!: Observable<boolean>
+  suppressSave$!: Observable<boolean>
   isInputFormatted$!: Observable<boolean>
 
   readonly undoRedoService = inject(UndoRedoService);
   readonly parserStrategyService = inject(ParserStrategyService);
   readonly saveService = inject(SaveService);
   readonly PrimeIcons = PrimeIcons;
+  readonly countdown$ = this.saveService.countdown;
 
   editorOptions = {
     automaticLayout: true,
@@ -38,17 +41,40 @@ export class JsonEditorComponent implements OnInit {
 
   ngOnInit() {
     this.isInputFormatted$ = this.getIsInputFormatted$(this.control)
-    this.needSave$ = this.getNeedSave$(this.control);
-
     this.initializeSaveService();
+    this.initializeUndoRedo();
   }
 
   save() {
     this.saveService.saveState(this.control.value)
   }
 
+  private initializeUndoRedo() {
+    const initialState = this.control.value ?? '';
+
+    this.undoRedoService.initialize(initialState);
+
+    this.control.valueChanges
+      .pipe(
+        debounceTime(200),
+        tap((value) => this.undoRedoService.addState(value ?? '')),
+        filter(Boolean)
+      )
+      .subscribe()
+  }
+
   private initializeSaveService() {
-    const currentState = this.saveService.currentState
+    this.suppressSave$ = this.getSuppressSave$(this.control);
+    this.saveService.initializeService(this.name);
+
+    this.control.valueChanges
+      .pipe(
+        skip(3),
+        tap(() => this.saveService.startCountdown(this.control.value))
+      )
+      .subscribe()
+
+    const currentState = this.saveService.currentState;
 
     if (currentState) {
       this.control.setValue(currentState);
@@ -62,7 +88,7 @@ export class JsonEditorComponent implements OnInit {
     this.control.setValue(stringified ?? '')
   }
 
-  editorInit(editor: any) {
+  editorInit() {
     this.control.updateValueAndValidity();
   }
 
@@ -103,13 +129,11 @@ export class JsonEditorComponent implements OnInit {
       );
   }
 
-  private getNeedSave$(jsonInputControl: FormControl<string | null>) {
-    return merge(jsonInputControl.valueChanges, this.saveService.currentState$)
+  private getSuppressSave$(control: FormControl<string | null>) {
+    return merge(control.valueChanges, this.saveService.currentState$, this.countdown$)
       .pipe(
-        withLatestFrom(this.saveService.currentState$),
-        map(([_, currentSavedState]) => {
-          return jsonInputControl.value === currentSavedState;
-        })
+        withLatestFrom(this.saveService.currentState$, this.countdown$),
+        map(([_, currentSavedState, countdown]) => control.value === currentSavedState && !countdown)
       )
   }
 }
