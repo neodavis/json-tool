@@ -1,7 +1,7 @@
 import { AfterViewInit, Component, inject } from '@angular/core';
 import { FormControl } from '@angular/forms';
 
-import { debounceTime, filter, merge, startWith, tap } from 'rxjs';
+import { filter, merge, startWith, tap } from 'rxjs';
 import { SplitterModule } from 'primeng/splitter';
 import { Button } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
@@ -10,7 +10,6 @@ import { languages } from 'monaco-editor';
 import JSONSchema = languages.json.JSONSchema;
 
 import { JsonParser, ParserStrategyService } from '../services/json-strategy.service';
-import { UndoRedoService } from '../services/undo-redo.service';
 import { SaveService } from '../services/save.service';
 import { schemaValidatorGetter } from '../validators/schema.validator';
 import { JsonEditorComponent } from './components/json-editor/json-editor.component';
@@ -24,110 +23,192 @@ import { JsonToolbarComponent } from './components/json-toolbar/json-toolbar.com
   providers: [ParserStrategyService, SaveService],
 })
 export class JsonToolComponent implements AfterViewInit {
-  readonly undoRedoService = inject(UndoRedoService);
-  readonly saveService = inject(SaveService);
   readonly parserStrategyService = inject(ParserStrategyService);
 
   readonly schemaControl = new FormControl<string>('', null, schemaValidatorGetter('inmemory://model/1'));
   readonly jsonInputControl = new FormControl<string>('', null, schemaValidatorGetter('inmemory://model/2'));
 
   // TODO: move into const file
-  private readonly jsonSchema = {
-    "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "https://example.com/json-schema-schema",
-    "title": "JSON Schema",
-    "description": "A schema for defining JSON Schemas.",
-    "type": "object",
+  private readonly schema = {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "http://json-schema.org/draft-07/schema#",
+    "title": "Core schema meta-schema",
+    "definitions": {
+      "schemaArray": {
+        "type": "array",
+        "minItems": 1,
+        "items": { "$ref": "#" }
+      },
+      "nonNegativeInteger": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "nonNegativeIntegerDefault0": {
+        "allOf": [
+          { "$ref": "#/definitions/nonNegativeInteger" },
+          { "default": 0 }
+        ]
+      },
+      "simpleTypes": {
+        "enum": [
+          "array",
+          "boolean",
+          "integer",
+          "null",
+          "number",
+          "object",
+          "string"
+        ]
+      },
+      "stringArray": {
+        "type": "array",
+        "items": { "type": "string" },
+        "uniqueItems": true,
+        "default": []
+      }
+    },
+    "type": ["object", "boolean"],
     "properties": {
       "$id": {
         "type": "string",
-        "format": "uri",
-        "description": "A unique identifier for the schema."
+        "format": "uri-reference"
       },
       "$schema": {
         "type": "string",
-        "format": "uri",
-        "description": "The meta-schema URI."
+        "format": "uri"
+      },
+      "$ref": {
+        "type": "string",
+        "format": "uri-reference"
+      },
+      "$comment": {
+        "type": "string"
       },
       "title": {
-        "type": "string",
-        "description": "A short title for the schema."
+        "type": "string"
       },
       "description": {
-        "type": "string",
-        "description": "A detailed description of the schema."
+        "type": "string"
       },
-      "type": {
+      "default": true,
+      "readOnly": {
+        "type": "boolean",
+        "default": false
+      },
+      "writeOnly": {
+        "type": "boolean",
+        "default": false
+      },
+      "examples": {
+        "type": "array",
+        "items": true
+      },
+      "multipleOf": {
+        "type": "number",
+        "exclusiveMinimum": 0
+      },
+      "maximum": {
+        "type": "number"
+      },
+      "exclusiveMaximum": {
+        "type": "number"
+      },
+      "minimum": {
+        "type": "number"
+      },
+      "exclusiveMinimum": {
+        "type": "number"
+      },
+      "maxLength": { "$ref": "#/definitions/nonNegativeInteger" },
+      "minLength": { "$ref": "#/definitions/nonNegativeIntegerDefault0" },
+      "pattern": {
         "type": "string",
-        "enum": ["object", "array", "string", "number", "boolean", "null"],
-        "description": "The type of data described by this schema."
+        "format": "regex"
+      },
+      "additionalItems": { "$ref": "#" },
+      "items": {
+        "anyOf": [
+          { "$ref": "#" },
+          { "$ref": "#/definitions/schemaArray" }
+        ],
+        "default": true
+      },
+      "maxItems": { "$ref": "#/definitions/nonNegativeInteger" },
+      "minItems": { "$ref": "#/definitions/nonNegativeIntegerDefault0" },
+      "uniqueItems": {
+        "type": "boolean",
+        "default": false
+      },
+      "contains": { "$ref": "#" },
+      "maxProperties": { "$ref": "#/definitions/nonNegativeInteger" },
+      "minProperties": { "$ref": "#/definitions/nonNegativeIntegerDefault0" },
+      "required": { "$ref": "#/definitions/stringArray" },
+      "additionalProperties": { "$ref": "#" },
+      "definitions": {
+        "type": "object",
+        "additionalProperties": { "$ref": "#" },
+        "default": {}
       },
       "properties": {
         "type": "object",
+        "additionalProperties": { "$ref": "#" },
+        "default": {}
+      },
+      "patternProperties": {
+        "type": "object",
+        "additionalProperties": { "$ref": "#" },
+        "propertyNames": { "format": "regex" },
+        "default": {}
+      },
+      "dependencies": {
+        "type": "object",
         "additionalProperties": {
-          "$ref": "#"
-        },
-        "description": "An object defining the properties of an object type."
+          "anyOf": [
+            { "$ref": "#" },
+            { "$ref": "#/definitions/stringArray" }
+          ]
+        }
       },
-      "items": {
-        "oneOf": [
-          { "$ref": "#" },
-          {
-            "type": "array",
-            "items": { "$ref": "#" }
-          }
-        ],
-        "description": "Defines the items in an array."
-      },
-      "required": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        },
-        "description": "An array of required property names."
-      },
+      "propertyNames": { "$ref": "#" },
+      "const": true,
       "enum": {
         "type": "array",
-        "items": {
-          "type": "string"
-        },
-        "description": "An array of allowed values for the data."
+        "items": true,
+        "minItems": 1,
+        "uniqueItems": true
       },
-      "default": {
-        "type": ["string", "number", "boolean", "null", "object", "array"],
-        "description": "The default value for the data."
+      "type": {
+        "anyOf": [
+          { "$ref": "#/definitions/simpleTypes" },
+          {
+            "type": "array",
+            "items": { "$ref": "#/definitions/simpleTypes" },
+            "minItems": 1,
+            "uniqueItems": true
+          }
+        ]
       },
-      "additionalProperties": {
-        "$ref": "#",
-        "description": "Defines the schema for additional properties."
-      }
+      "format": { "type": "string" },
+      "contentMediaType": { "type": "string" },
+      "contentEncoding": { "type": "string" },
+      "if": { "$ref": "#" },
+      "then": { "$ref": "#" },
+      "else": { "$ref": "#" },
+      "allOf": { "$ref": "#/definitions/schemaArray" },
+      "anyOf": { "$ref": "#/definitions/schemaArray" },
+      "oneOf": { "$ref": "#/definitions/schemaArray" },
+      "not": { "$ref": "#" }
     },
-    "required": ["type"],
-    "additionalProperties": false
+    "default": true
   }
 
   ngAfterViewInit() {
-    this.initializeUndoRedo();
     this.initializeParserStrategy();
     this.initializeSchema()
   }
 
   private initializeParserStrategy() {
     this.parserStrategyService.setParserStrategy(new JsonParser(4));
-  }
-
-  private initializeUndoRedo() {
-    const initialState = this.jsonInputControl.value ?? '';
-
-    this.undoRedoService.initialize(initialState);
-
-    this.jsonInputControl.valueChanges
-      .pipe(
-        debounceTime(200),
-        tap((value) => this.undoRedoService.addState(value ?? '')),
-        filter(Boolean)
-      )
-      .subscribe()
   }
 
   private initializeSchema() {
@@ -152,10 +233,10 @@ export class JsonToolComponent implements AfterViewInit {
 
   setSchema(schema: JSONSchema | null) {
     const schemas = [
-      { uri: this.jsonSchema.$schema!, fileMatch: ['inmemory://model/1'], schema: this.jsonSchema },
-      ...(schema ? [{ uri: schema.$schema!, fileMatch: ['inmemory://model/2'], schema }] : [])
+      { uri: 'inmemory://model/1', fileMatch: ['inmemory://model/1'], schema: this.schema },
+      ...(schema ? [{ uri: 'inmemory://model/2', fileMatch: ['inmemory://model/2'], schema }] : [])
     ]
 
-    window.monaco.languages.json.jsonDefaults.setDiagnosticsOptions({ enableSchemaRequest: true, schemas });
+    window.monaco.languages.json.jsonDefaults.setDiagnosticsOptions({ validate: true, schemas });
   }
 }
