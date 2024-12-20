@@ -14,7 +14,7 @@ export class SaveService<SaveState> {
 
   initializeService(key: string) {
     this.saveKey = key;
-    this._currentState$.next(this.localStorageService.getItem(this.saveKey) as SaveState);
+    this._currentState$.next(this.localStorageService.get(this.saveKey) as SaveState);
   }
 
   get currentState$() {
@@ -30,7 +30,7 @@ export class SaveService<SaveState> {
   }
 
   saveState(state: SaveState) {
-    this.localStorageService.setItem(this.saveKey, state);
+    this.localStorageService.save(this.saveKey, state);
     this._currentState$.next(state);
     this.countdown$.next(0);
   }

@@ -4,7 +4,7 @@ import { editor } from 'monaco-editor';
 import IMarker = editor.IMarker;
 
 export const schemaValidatorGetter = (uri: string) => (control: AbstractControl) => {
-  return of(window.monaco)
+  return !control.value ? of({ error: `Input is empty` }) : of(window.monaco)
     .pipe(
       filter(Boolean),
       switchMap(monaco => from(monaco.languages.json.getWorker())),
