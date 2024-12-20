@@ -8,6 +8,7 @@ import * as githubDark from 'monaco-themes/themes/GitHub Dark.json';
 import { editor, languages, Uri } from 'monaco-editor';
 
 import { routes } from './app.routes';
+import { SHOW_LOGS } from './tokens/logger.token';
 
 declare global {
   interface Window {
@@ -34,6 +35,7 @@ export const appConfig: ApplicationConfig = {
           window.monaco.editor.setTheme('githubDark')
         }
       })
-    )
+    ),
+    { provide: SHOW_LOGS, useValue: false },
   ]
 };

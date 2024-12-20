@@ -18,11 +18,8 @@ import { SelectButtonModule } from 'primeng/selectbutton';
     TooltipModule,
     ReactiveFormsModule,
     FileUploadModule,
-    AsyncPipe,
-    KeyValuePipe,
     SelectButtonModule,
     FormsModule,
-    NgClass
   ],
   templateUrl: './json-toolbar.component.html',
 })

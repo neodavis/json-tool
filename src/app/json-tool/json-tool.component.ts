@@ -9,7 +9,6 @@ import { KeyValuePipe, NgClass } from '@angular/common';
 import { languages } from 'monaco-editor';
 import JSONSchema = languages.json.JSONSchema;
 
-import { JsonParser, ParserStrategyService } from '../services/json-strategy.service';
 import { SaveService } from '../services/save.service';
 import { schemaValidatorGetter } from '../validators/schema.validator';
 import { JsonEditorComponent } from './components/json-editor/json-editor.component';
@@ -19,12 +18,10 @@ import { JsonToolbarComponent } from './components/json-toolbar/json-toolbar.com
   selector: 'app-json-tool',
   templateUrl: './json-tool.component.html',
   standalone: true,
-  imports: [JsonEditorComponent, JsonToolbarComponent, SplitterModule, Button, TooltipModule, KeyValuePipe, NgClass],
-  providers: [ParserStrategyService, SaveService],
+  imports: [JsonEditorComponent, JsonToolbarComponent, SplitterModule, TooltipModule],
+  providers: [SaveService],
 })
 export class JsonToolComponent implements AfterViewInit {
-  readonly parserStrategyService = inject(ParserStrategyService);
-
   readonly schemaControl = new FormControl<string>('', null, schemaValidatorGetter('inmemory://model/1'));
   readonly jsonInputControl = new FormControl<string>('', null, schemaValidatorGetter('inmemory://model/2'));
 
@@ -203,12 +200,7 @@ export class JsonToolComponent implements AfterViewInit {
   }
 
   ngAfterViewInit() {
-    this.initializeParserStrategy();
     this.initializeSchema()
-  }
-
-  private initializeParserStrategy() {
-    this.parserStrategyService.setParserStrategy(new JsonParser(4));
   }
 
   private initializeSchema() {
@@ -221,7 +213,7 @@ export class JsonToolComponent implements AfterViewInit {
         filter(() => this.schemaControl.valid),
         tap(() => {
           const parsedSchema = this.schemaControl.value
-            ? this.parserStrategyService.parse(this.schemaControl.value) as JSONSchema
+            ? JSON.parse(this.schemaControl.value) as JSONSchema
             : {}
 
           this.setSchema(parsedSchema);

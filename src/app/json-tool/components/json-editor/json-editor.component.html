@@ -28,13 +28,24 @@
     <p-button
       size="small"
       styleClass="w-full h-full"
-      pTooltip="Format"
+      pTooltip="Compact Format"
       tooltipPosition="top"
       severity="help"
       [icon]="PrimeIcons.SYNC"
-      [disabled]="(isInputFormatted$ | async) || !control.valid"
-      (click)="formatInput()"
+      [disabled]="control.invalid"
+      (click)="formatInputCompact()"
     ></p-button>
+
+    <p-button
+    size="small"
+    styleClass="w-full h-full"
+    pTooltip="Pretty Format"
+    tooltipPosition="top"
+    severity="help"
+    [icon]="PrimeIcons.SPARKLES"
+    [disabled]="control.invalid"
+    (click)="formatInputPretty()"
+  ></p-button>
 
     <p-button
       size="small"

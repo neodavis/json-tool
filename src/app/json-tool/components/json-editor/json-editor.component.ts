@@ -6,11 +6,16 @@ import { EditorComponent } from 'ngx-monaco-editor-v2';
 import { TooltipModule } from 'primeng/tooltip';
 import { PrimeIcons } from 'primeng/api';
 import { Button } from 'primeng/button';
-import { debounceTime, filter, map, merge, Observable, skip, startWith, tap, withLatestFrom } from 'rxjs';
+import { BehaviorSubject, debounceTime, filter, take, tap } from 'rxjs';
 
 import { UndoRedoService } from '../../../services/undo-redo.service';
-import { ParserStrategyService } from '../../../services/json-strategy.service';
+import { CompactFormatterStrategy, SmartFormatterStrategy as PrettyFormatterStrategy } from '../../../strategies/compact-formatter-strategy';
 import { SaveService } from '../../../services/save.service';
+import { EditorOptionsFlyweight } from '../../../flyweights/editor-options.flyweight';
+import { EditorStateSubject } from '../../../observers/editor-observer';
+import { EditorBaseComponent } from '../editor-base/editor-base.component';
+import { FormatCommand, SaveCommand } from '../../../commands/editor-command';
+import { LoggerService } from '../../../services/logger.service';
 
 @Component({
   selector: 'app-json-editor',
@@ -20,120 +25,81 @@ import { SaveService } from '../../../services/save.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [SaveService, UndoRedoService],
 })
-export class JsonEditorComponent implements OnInit {
-  @Input({ required: true }) name!: string
-  @Input({ required: true }) description!: string
+export class JsonEditorComponent extends EditorBaseComponent {
+  @Input({ required: true }) name!: string;
+  @Input({ required: true }) description!: string;
   @Input({ required: true }) control!: FormControl;
-
-  suppressSave$!: Observable<boolean>
-  isInputFormatted$!: Observable<boolean>
-
+  
   readonly undoRedoService = inject(UndoRedoService);
-  readonly parserStrategyService = inject(ParserStrategyService);
+  readonly loggerService = inject(LoggerService);
   readonly saveService = inject(SaveService);
+
+  readonly editorOptions = EditorOptionsFlyweight.getOptions('json', this.loggerService);
   readonly PrimeIcons = PrimeIcons;
   readonly countdown$ = this.saveService.countdown;
+  
+  readonly stateSubject = new EditorStateSubject(this.loggerService);
+  readonly compactFormatter = new CompactFormatterStrategy();
+  readonly prettyFormatter = new PrettyFormatterStrategy();
+  readonly suppressSave$ = new BehaviorSubject<boolean>(true);
 
-  editorOptions = {
-    automaticLayout: true,
-    language: 'json'
-  };
-
-  ngOnInit() {
-    this.isInputFormatted$ = this.getIsInputFormatted$(this.control)
-    this.initializeSaveService();
-    this.initializeUndoRedo();
-  }
-
-  save() {
-    this.saveService.saveState(this.control.value)
-  }
-
-  private initializeUndoRedo() {
-    const initialState = this.control.value ?? '';
-
-    this.undoRedoService.initialize(initialState);
-
-    this.control.valueChanges
-      .pipe(
-        debounceTime(200),
-        tap((value) => this.undoRedoService.addState(value ?? '')),
-        filter(Boolean)
-      )
-      .subscribe()
-  }
-
-  private initializeSaveService() {
-    this.suppressSave$ = this.getSuppressSave$(this.control);
-    this.saveService.initializeService(this.name);
-
-    this.control.valueChanges
-      .pipe(
-        skip(3),
-        tap(() => this.saveService.startCountdown(this.control.value))
-      )
-      .subscribe()
-
-    const currentState = this.saveService.currentState;
-
-    if (currentState) {
-      this.control.setValue(currentState);
-    }
-  }
-
-  formatInput() {
-    const parsed = this.parserStrategyService.parse(this.control.value ?? '');
-    const stringified = this.parserStrategyService.stringify(parsed ?? { });
-
-    this.control.setValue(stringified ?? '')
-  }
-
-  editorInit() {
-    this.control.updateValueAndValidity();
-  }
-
-  undo() {
+  undo(): void {
     const previousState = this.undoRedoService.undo();
-
-    if (previousState !== null) {
+    if (previousState) {
       this.control.setValue(previousState);
     }
   }
 
-  redo() {
+  redo(): void {
     const nextState = this.undoRedoService.redo();
-
-    if (nextState !== null) {
+    if (nextState) {
       this.control.setValue(nextState);
     }
   }
 
-  private getIsInputFormatted$(jsonInputControl: FormControl<string | null>) {
-    return jsonInputControl.valueChanges
-      .pipe(
-        startWith(jsonInputControl.value),
-        map((value) => {
-          if (jsonInputControl.invalid || !value) {
-            return true
-          }
-
-          try {
-            const parsed = this.parserStrategyService.parse(value ?? '');
-            const stringified = this.parserStrategyService.stringify(parsed ?? { });
-
-            return stringified === value
-          } catch {
-            return false
-          }
-        })
-      );
+  editorInit(): void {
+    this.control.updateValueAndValidity();
   }
 
-  private getSuppressSave$(control: FormControl<string | null>) {
-    return merge(control.valueChanges, this.saveService.currentState$, this.countdown$)
+  protected initializeServices(): void {
+    this.saveService.initializeService(this.name);
+    this.undoRedoService.initialize(this.control.value || '');
+    this.stateSubject.observe({
+      onStateChange: () => this.suppressSave$.next(false)
+    });
+    this.saveService._currentState$
       .pipe(
-        withLatestFrom(this.saveService.currentState$, this.countdown$),
-        map(([_, currentSavedState, countdown]) => control.value === currentSavedState && !countdown)
+        take(1),
+        tap((state) => this.control.setValue(state))
       )
+      .subscribe()
+  }
+
+  protected setupSubscriptions(): void {
+    this.control.valueChanges
+    .pipe(
+      debounceTime(300),
+      tap((value) => this.stateSubject.notify(value)),
+      filter(Boolean),
+      tap(value => this.undoRedoService.addState(value))
+    )
+    .subscribe();
+  }
+
+  protected configureEditor(): void {
+    this.control.updateValueAndValidity();
+  }
+
+  formatInputCompact(): void {
+    new FormatCommand(this, this.compactFormatter, this.loggerService).execute();
+  }
+
+  formatInputPretty(): void {
+    new FormatCommand(this, this.prettyFormatter, this.loggerService).execute();
+  }
+
+  save(): void {
+    new SaveCommand(this, this.loggerService).execute();
+    this.suppressSave$.next(true);
   }
 }
