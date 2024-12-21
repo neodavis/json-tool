@@ -1,24 +1,14 @@
-import { LoggerService } from "../services/logger.service";
+import { LoggerCommand } from "../commands/logger-command";
+import { Subject } from "./base-observer";
 
-// src/app/observers/editor-observer.ts
-export interface EditorStateObserver {
-  onStateChange(state: string): void;
-}
-  
-export class EditorStateSubject {
-  private observers: EditorStateObserver[] = [];
-  private loggerService: LoggerService;
 
-  constructor(loggerService: LoggerService) {
-    this.loggerService = loggerService;
+export class EditorStateSubject extends Subject<string> {
+  constructor() {
+    super();
   }
   
-  observe(observer: EditorStateObserver): void {
-    this.observers.push(observer);
-  }
-  
-  notify(state: string): void {
-    this.loggerService.log('Observer', 'Notifying state change to observers');    
-    this.observers.forEach(observer => observer.onStateChange(state));
+  override next(state: string): void {
+    new LoggerCommand('Editor Observer', 'Notifying state change to observers').execute();    
+    super.next(state);
   }
 }
