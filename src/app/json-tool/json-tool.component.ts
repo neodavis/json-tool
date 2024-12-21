@@ -3,9 +3,7 @@ import { FormControl } from '@angular/forms';
 
 import { filter, merge, startWith, tap } from 'rxjs';
 import { SplitterModule } from 'primeng/splitter';
-import { Button } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
-import { KeyValuePipe, NgClass } from '@angular/common';
 import { languages } from 'monaco-editor';
 import JSONSchema = languages.json.JSONSchema;
 
@@ -13,6 +11,7 @@ import { SaveService } from '../services/save.service';
 import { schemaValidatorGetter } from '../validators/schema.validator';
 import { JsonEditorComponent } from './components/json-editor/json-editor.component';
 import { JsonToolbarComponent } from './components/json-toolbar/json-toolbar.component';
+import { SchemaFlyweight } from '../flyweights/schema-flyweight';
 
 @Component({
   selector: 'app-json-tool',
@@ -24,6 +23,8 @@ import { JsonToolbarComponent } from './components/json-toolbar/json-toolbar.com
 export class JsonToolComponent implements AfterViewInit {
   readonly schemaControl = new FormControl<string>('', null, schemaValidatorGetter('inmemory://model/1'));
   readonly jsonInputControl = new FormControl<string>('', null, schemaValidatorGetter('inmemory://model/2'));
+
+  private schemaFlyweight = inject(SchemaFlyweight)
 
   // TODO: move into const file
   private readonly schema = {
@@ -224,11 +225,17 @@ export class JsonToolComponent implements AfterViewInit {
   }
 
   setSchema(schema: JSONSchema | null) {
+    const baseSchema = this.schemaFlyweight.getSchema('base', this.schema);
+    const customSchema = schema ? this.schemaFlyweight.getSchema('custom', schema) : null;
+    
     const schemas = [
-      { uri: 'inmemory://model/1', fileMatch: ['inmemory://model/1'], schema: this.schema },
-      ...(schema ? [{ uri: 'inmemory://model/2', fileMatch: ['inmemory://model/2'], schema }] : [])
-    ]
+      { uri: 'inmemory://model/1', fileMatch: ['inmemory://model/1'], schema: baseSchema },
+      ...(customSchema ? [{ uri: 'inmemory://model/2', fileMatch: ['inmemory://model/2'], schema: customSchema }] : [])
+    ];
 
-    window.monaco.languages.json.jsonDefaults.setDiagnosticsOptions({ validate: true, schemas });
+    window.monaco.languages.json.jsonDefaults.setDiagnosticsOptions({ 
+      validate: true, 
+      schemas 
+    });
   }
 }

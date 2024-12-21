@@ -1,20 +1,16 @@
 import { JsonEditorComponent } from "../json-tool/components/json-editor/json-editor.component";
-import { FormatterStrategy } from "../services/formatter-strategy.service";
-import { LoggerService } from "../services/logger.service";
+import { LoggerCommand } from "../commands/logger-command";
+import { FormatterStrategy } from "../strategies/formatter-strategy";
+import { BaseCommand } from "./base-command";
 
-export interface EditorCommand {
-  execute(): void;
-}
-
-export class FormatCommand implements EditorCommand {
+export class FormatCommand implements BaseCommand {
   constructor(
     private editor: JsonEditorComponent,
     private formatter: FormatterStrategy,
-    private loggerService: LoggerService
   ) {}
 
   execute(): void {
-    this.loggerService.log('Command', 'Executing Format Command');
+    new LoggerCommand('Command', 'Executing Format Command').execute();
 
     const formatted = this.formatter.format(this.editor.control.value);
 
@@ -22,14 +18,11 @@ export class FormatCommand implements EditorCommand {
   }
 }
 
-export class SaveCommand implements EditorCommand {
-  constructor(
-    private editor: JsonEditorComponent,
-    private loggerService: LoggerService
-) {}
+export class SaveCommand implements BaseCommand {
+  constructor(private editor: JsonEditorComponent) {}
 
   execute(): void {
-    this.loggerService.log('Command', 'Executing Save Command');
+    new LoggerCommand('Command', 'Executing Save Command').execute();
 
     this.editor.saveService.saveState(this.editor.control.value);
   }
