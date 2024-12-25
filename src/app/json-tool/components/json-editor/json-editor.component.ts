@@ -27,9 +27,9 @@ import { ThemeChangeSubject } from '../../../observers/theme-observer';
   providers: [SaveService, UndoRedoService],
 })
 export class JsonEditorComponent extends EditorBaseComponent {
-  @Input({ required: true }) name!: string;
-  @Input({ required: true }) description!: string;
-  @Input({ required: true }) control!: FormControl;
+  @Input({required: true}) name!: string;
+  @Input({required: true}) description!: string;
+  @Input({required: true}) control!: FormControl;
 
   readonly undoRedoService = inject(UndoRedoService);
   readonly saveService = inject(SaveService);
@@ -37,7 +37,7 @@ export class JsonEditorComponent extends EditorBaseComponent {
 
   readonly PrimeIcons = PrimeIcons;
   readonly countdown$ = this.saveService.countdown;
-  
+
   readonly stateSubject = new EditorStateSubject();
   readonly compactFormatter = new CompactFormatterStrategy();
   readonly prettyFormatter = new PrettyFormatterStrategy();
@@ -111,12 +111,12 @@ export class JsonEditorComponent extends EditorBaseComponent {
       tap((value) => this.saveService.startCountdown(value)),
     ).subscribe();
   }
-  
+
   save(): void {
     new SaveCommand(this).execute();
     this.suppressSave$.next(true);
   }
-  
+
   private initializeThemeObserver(): void {
     this.themeSubject.subscribe({
       next: (themeName) => {

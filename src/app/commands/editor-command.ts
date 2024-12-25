@@ -1,5 +1,5 @@
 import { JsonEditorComponent } from "../json-tool/components/json-editor/json-editor.component";
-import { LoggerCommand } from "../commands/logger-command";
+import { LoggerCommand } from "./logger-command";
 import { FormatterStrategy } from "../strategies/formatter-strategy";
 import { BaseCommand } from "./base-command";
 
@@ -7,7 +7,8 @@ export class FormatCommand implements BaseCommand {
   constructor(
     private editor: JsonEditorComponent,
     private formatter: FormatterStrategy,
-  ) {}
+  ) {
+  }
 
   execute(): void {
     new LoggerCommand('Command', 'Executing Format Command').execute();
@@ -19,7 +20,8 @@ export class FormatCommand implements BaseCommand {
 }
 
 export class SaveCommand implements BaseCommand {
-  constructor(private editor: JsonEditorComponent) {}
+  constructor(private editor: JsonEditorComponent) {
+  }
 
   execute(): void {
     new LoggerCommand('Command', 'Executing Save Command').execute();
