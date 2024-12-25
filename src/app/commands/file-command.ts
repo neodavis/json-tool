@@ -3,7 +3,7 @@ import { FileUpload, FileSelectEvent } from "primeng/fileupload";
 import { fromPromise } from "rxjs/internal/observable/innerFrom";
 
 import { JsonToolbarComponent } from "../json-tool/components/json-toolbar/json-toolbar.component";
-import { LoggerCommand } from "../commands/logger-command";
+import { LoggerCommand } from "./logger-command";
 import { BaseCommand } from "./base-command";
 
 export class FileImportCommand implements BaseCommand {
@@ -11,7 +11,8 @@ export class FileImportCommand implements BaseCommand {
     private toolbar: JsonToolbarComponent,
     private fileUpload: FileUpload,
     private event: FileSelectEvent,
-  ) {}
+  ) {
+  }
 
   execute(): void {
     new LoggerCommand('Command', 'Executing File Import Command').execute();
@@ -39,7 +40,8 @@ export class FileNameUpdateCommand implements BaseCommand {
   constructor(
     private toolbar: JsonToolbarComponent,
     private fileName: string,
-  ) {}
+  ) {
+  }
 
   execute(): void {
     new LoggerCommand('Command', 'Executing File Name Update Command').execute();

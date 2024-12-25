@@ -1,12 +1,10 @@
 import { APP_INITIALIZER, ApplicationConfig, importProvidersFrom, Injector, provideZoneChangeDetection } from '@angular/core';
-import { provideRouter } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { provideAnimations } from '@angular/platform-browser/animations';
 
 import { MonacoEditorModule, provideMonacoEditor } from 'ngx-monaco-editor-v2';
 import { editor, languages, Uri } from 'monaco-editor';
 
-import { routes } from './app.routes';
 import { SHOW_LOGS } from './tokens/logger.token';
 import { EditorThemeFlyweight } from './flyweights/editor-theme-flyweight';
 import { DEFAULT_THEME } from './tokens/theme.token';
@@ -27,7 +25,6 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideAnimations(),
     provideZoneChangeDetection({ eventCoalescing: true }),
-    provideRouter(routes),
     provideHttpClient(),
     provideMonacoEditor(),
     importProvidersFrom(

@@ -3,7 +3,6 @@ import { FormControl, FormsModule, ReactiveFormsModule, Validators } from '@angu
 
 import { InputTextModule } from 'primeng/inputtext';
 import { FileSelectEvent, FileUpload, FileUploadModule } from 'primeng/fileupload';
-import { PrimeIcons } from 'primeng/api';
 import { TooltipModule } from 'primeng/tooltip';
 import { SelectButtonModule } from 'primeng/selectbutton';
 
@@ -23,12 +22,11 @@ import { FileImportCommand } from '../../../commands/file-command';
   templateUrl: './json-toolbar.component.html',
 })
 export class JsonToolbarComponent {
-  @Input({ required: true }) jsonInputControl: FormControl<null | string> = new FormControl('');
-  @Input({ required: true }) schemaControl: FormControl<null | string> = new FormControl('');
+  @Input({required: true}) jsonInputControl: FormControl<null | string> = new FormControl('');
+  @Input({required: true}) schemaControl: FormControl<null | string> = new FormControl('');
 
-  readonly PrimeIcons = PrimeIcons;
   readonly fileNameControl = new FormControl<string>('New Document', [
-    Validators.minLength(1), 
+    Validators.minLength(1),
     Validators.required
   ]);
 

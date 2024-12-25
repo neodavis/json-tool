@@ -1,3 +1,3 @@
 export interface FormatterStrategy {
-    format(text: string): string;
+  format(text: string): string;
 }

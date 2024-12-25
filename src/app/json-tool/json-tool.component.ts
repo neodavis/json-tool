@@ -35,7 +35,7 @@ export class JsonToolComponent implements AfterViewInit {
       "schemaArray": {
         "type": "array",
         "minItems": 1,
-        "items": { "$ref": "#" }
+        "items": {"$ref": "#"}
       },
       "nonNegativeInteger": {
         "type": "integer",
@@ -43,8 +43,8 @@ export class JsonToolComponent implements AfterViewInit {
       },
       "nonNegativeIntegerDefault0": {
         "allOf": [
-          { "$ref": "#/definitions/nonNegativeInteger" },
-          { "default": 0 }
+          {"$ref": "#/definitions/nonNegativeInteger"},
+          {"default": 0}
         ]
       },
       "simpleTypes": {
@@ -60,7 +60,7 @@ export class JsonToolComponent implements AfterViewInit {
       },
       "stringArray": {
         "type": "array",
-        "items": { "type": "string" },
+        "items": {"type": "string"},
         "uniqueItems": true,
         "default": []
       }
@@ -117,57 +117,57 @@ export class JsonToolComponent implements AfterViewInit {
       "exclusiveMinimum": {
         "type": "number"
       },
-      "maxLength": { "$ref": "#/definitions/nonNegativeInteger" },
-      "minLength": { "$ref": "#/definitions/nonNegativeIntegerDefault0" },
+      "maxLength": {"$ref": "#/definitions/nonNegativeInteger"},
+      "minLength": {"$ref": "#/definitions/nonNegativeIntegerDefault0"},
       "pattern": {
         "type": "string",
         "format": "regex"
       },
-      "additionalItems": { "$ref": "#" },
+      "additionalItems": {"$ref": "#"},
       "items": {
         "anyOf": [
-          { "$ref": "#" },
-          { "$ref": "#/definitions/schemaArray" }
+          {"$ref": "#"},
+          {"$ref": "#/definitions/schemaArray"}
         ],
         "default": true
       },
-      "maxItems": { "$ref": "#/definitions/nonNegativeInteger" },
-      "minItems": { "$ref": "#/definitions/nonNegativeIntegerDefault0" },
+      "maxItems": {"$ref": "#/definitions/nonNegativeInteger"},
+      "minItems": {"$ref": "#/definitions/nonNegativeIntegerDefault0"},
       "uniqueItems": {
         "type": "boolean",
         "default": false
       },
-      "contains": { "$ref": "#" },
-      "maxProperties": { "$ref": "#/definitions/nonNegativeInteger" },
-      "minProperties": { "$ref": "#/definitions/nonNegativeIntegerDefault0" },
-      "required": { "$ref": "#/definitions/stringArray" },
-      "additionalProperties": { "$ref": "#" },
+      "contains": {"$ref": "#"},
+      "maxProperties": {"$ref": "#/definitions/nonNegativeInteger"},
+      "minProperties": {"$ref": "#/definitions/nonNegativeIntegerDefault0"},
+      "required": {"$ref": "#/definitions/stringArray"},
+      "additionalProperties": {"$ref": "#"},
       "definitions": {
         "type": "object",
-        "additionalProperties": { "$ref": "#" },
+        "additionalProperties": {"$ref": "#"},
         "default": {}
       },
       "properties": {
         "type": "object",
-        "additionalProperties": { "$ref": "#" },
+        "additionalProperties": {"$ref": "#"},
         "default": {}
       },
       "patternProperties": {
         "type": "object",
-        "additionalProperties": { "$ref": "#" },
-        "propertyNames": { "format": "regex" },
+        "additionalProperties": {"$ref": "#"},
+        "propertyNames": {"format": "regex"},
         "default": {}
       },
       "dependencies": {
         "type": "object",
         "additionalProperties": {
           "anyOf": [
-            { "$ref": "#" },
-            { "$ref": "#/definitions/stringArray" }
+            {"$ref": "#"},
+            {"$ref": "#/definitions/stringArray"}
           ]
         }
       },
-      "propertyNames": { "$ref": "#" },
+      "propertyNames": {"$ref": "#"},
       "const": true,
       "enum": {
         "type": "array",
@@ -177,25 +177,25 @@ export class JsonToolComponent implements AfterViewInit {
       },
       "type": {
         "anyOf": [
-          { "$ref": "#/definitions/simpleTypes" },
+          {"$ref": "#/definitions/simpleTypes"},
           {
             "type": "array",
-            "items": { "$ref": "#/definitions/simpleTypes" },
+            "items": {"$ref": "#/definitions/simpleTypes"},
             "minItems": 1,
             "uniqueItems": true
           }
         ]
       },
-      "format": { "type": "string" },
-      "contentMediaType": { "type": "string" },
-      "contentEncoding": { "type": "string" },
-      "if": { "$ref": "#" },
-      "then": { "$ref": "#" },
-      "else": { "$ref": "#" },
-      "allOf": { "$ref": "#/definitions/schemaArray" },
-      "anyOf": { "$ref": "#/definitions/schemaArray" },
-      "oneOf": { "$ref": "#/definitions/schemaArray" },
-      "not": { "$ref": "#" }
+      "format": {"type": "string"},
+      "contentMediaType": {"type": "string"},
+      "contentEncoding": {"type": "string"},
+      "if": {"$ref": "#"},
+      "then": {"$ref": "#"},
+      "else": {"$ref": "#"},
+      "allOf": {"$ref": "#/definitions/schemaArray"},
+      "anyOf": {"$ref": "#/definitions/schemaArray"},
+      "oneOf": {"$ref": "#/definitions/schemaArray"},
+      "not": {"$ref": "#"}
     },
     "default": true
   }
@@ -227,15 +227,15 @@ export class JsonToolComponent implements AfterViewInit {
   setSchema(schema: JSONSchema | null) {
     const baseSchema = this.schemaFlyweight.getSchema('base', this.schema);
     const customSchema = schema ? this.schemaFlyweight.getSchema('custom', schema) : null;
-    
+
     const schemas = [
-      { uri: 'inmemory://model/1', fileMatch: ['inmemory://model/1'], schema: baseSchema },
-      ...(customSchema ? [{ uri: 'inmemory://model/2', fileMatch: ['inmemory://model/2'], schema: customSchema }] : [])
+      {uri: 'inmemory://model/1', fileMatch: ['inmemory://model/1'], schema: baseSchema},
+      ...(customSchema ? [{uri: 'inmemory://model/2', fileMatch: ['inmemory://model/2'], schema: customSchema}] : [])
     ];
 
-    window.monaco.languages.json.jsonDefaults.setDiagnosticsOptions({ 
-      validate: true, 
-      schemas 
+    window.monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
+      validate: true,
+      schemas
     });
   }
 }
