@@ -1,59 +1,68 @@
-import { inject, Injectable } from "@angular/core";
-import { BehaviorSubject, interval, Subscription, takeWhile, tap } from "rxjs";
-import { LocalStorageService } from "./local-storage.service";
+import { inject, Injectable } from '@angular/core';
+import { BehaviorSubject, timer } from 'rxjs';
+import { DbService } from './db.service';
+import { DocumentType } from '../interfaces/document.interface';
 
 @Injectable()
-export class SaveService<SaveState> {
-  private readonly _currentState$ = new BehaviorSubject<SaveState>(null as SaveState);
-  private readonly countdown$ = new BehaviorSubject<number>(0);
-  private readonly localStorageService = inject(LocalStorageService);
-  private saveKey = 'DefaultSaveKey';
-  private subscription: Subscription | null = null;
+export class SaveService {
+  private readonly dbService = inject(DbService);
+  private documentId: number = 0;
+  private currentDocument = new BehaviorSubject<string>('');
 
-  initializeService(key: string) {
-    this.saveKey = key;
-    const savedState = this.localStorageService.get(this.saveKey) as SaveState;
-    if (savedState) {
-      this._currentState$.next(savedState);
-    }
-  }
+  readonly countdown = new BehaviorSubject<number>(0);
+  readonly currentState$ = this.currentDocument.asObservable();
+  readonly isSaving = new BehaviorSubject<boolean>(false);
 
-  startCountdown(saveState: SaveState) {
-    if (this.subscription) {
-      this.subscription.unsubscribe();
-    }
-    
-    this.countdown$.next(5);
-    
-    this.subscription = interval(1000).pipe(
-      takeWhile(() => this.countdown$.value > 0),
-      tap(() => {
-        const currentCount = this.countdown$.value;
-        if (currentCount === 1) {
-          this.saveState(saveState);
+  async initializeService(documentName: string): Promise<void> {
+    await this.dbService.initialize();
+    this.documentId = documentName.includes('Schema') ? 2 : 1;
+
+    this.dbService.getDocument(this.documentId).subscribe({
+      next: (doc) => {
+        if (doc?.content) {
+          this.currentDocument.next(doc.content);
         } else {
-          this.countdown$.next(currentCount - 1);
+          this.initializeNewDocument();
         }
-      })
-    ).subscribe();
+      },
+      error: () => this.initializeNewDocument()
+    });
   }
 
-  saveState(state: SaveState) {
-    this.localStorageService.save(this.saveKey, state);
-    this._currentState$.next(state);
-    this.countdown$.next(0);
-    
-    if (this.subscription) {
-      this.subscription.unsubscribe();
-      this.subscription = null;
-    }
+  private initializeNewDocument(): void {
+    this.currentDocument.next('');
+    this.saveState('');
   }
 
-  get currentState$() {
-    return this._currentState$.asObservable();
+  saveState(content: string): void {
+    this.startCountdown(content);
   }
 
-  get countdown() {
-    return this.countdown$.asObservable();
+  startCountdown(content: string): void {
+    this.countdown.next(3);
+    this.isSaving.next(true);
+
+    timer(3000).subscribe(() => {
+      this.dbService.saveDocument({
+        id: this.documentId,
+        content: content,
+        type: this.documentId === 1 ? DocumentType.JSON : DocumentType.SCHEMA,
+        lastModified: new Date()
+      }).subscribe({
+        next: () => {
+          this.countdown.next(0);
+          this.isSaving.next(false);
+        },
+        error: () => {
+          this.handleSaveError();
+          this.isSaving.next(false);
+        }
+      });
+    });
+  }
+
+  private handleSaveError(): void {
+    // Handle save errors, maybe retry or show notification
+    this.countdown.next(-1);
   }
 }

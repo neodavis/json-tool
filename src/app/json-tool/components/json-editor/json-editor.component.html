@@ -1,94 +1,91 @@
-<div class="flex justify-between items-center my-2 px-8">
-  <div class="flex gap-2 items-center">
-    <div class="border-r border-stone-400 pr-2">
-      <h3>{{ name }}</h3>
-      <p class="text-xs opacity-60">{{ description }}</p>
+<div class="flex flex-col h-full">
+  <div class="flex justify-between items-center my-2 px-8">
+    <div class="flex gap-2 items-center">
+      <div class="border-r border-stone-400 pr-2">
+        <h3>{{ name }}</h3>
+        <p class="text-xs opacity-60">{{ description }}</p>
+      </div>
+
+      <p-button
+        size="small"
+        severity="warning"
+        pTooltip="Undo"
+        tooltipPosition="top"
+        styleClass="w-full h-full"
+        [icon]="PrimeIcons.REPLAY"
+        (click)="undo()"
+      ></p-button>
+
+      <p-button
+        size="small"
+        severity="warning"
+        pTooltip="Redo"
+        tooltipPosition="top"
+        styleClass="w-full h-full"
+        [icon]="PrimeIcons.REFRESH"
+        (click)="redo()"
+      ></p-button>
+
+      <p-button
+        size="small"
+        styleClass="w-full h-full"
+        pTooltip="Compact Format"
+        tooltipPosition="top"
+        severity="help"
+        [icon]="PrimeIcons.SYNC"
+        [disabled]="control.invalid"
+        (click)="formatInputCompact()"
+      ></p-button>
+
+      <p-button
+        size="small"
+        styleClass="w-full h-full"
+        pTooltip="Pretty Format"
+        tooltipPosition="top"
+        severity="help"
+        [icon]="PrimeIcons.SPARKLES"
+        [disabled]="control.invalid"
+        (click)="formatInputPretty()"
+      ></p-button>
+
+      <div class="flex items-center gap-2 px-2">
+        <span *ngIf="saveService.isSaving | async" class="text-xs text-gray-400">
+          Saving...
+        </span>
+
+        <span *ngIf="(saveService.isSaving | async) === false" class="text-xs text-green-400">
+          All changes saved
+        </span>
+      </div>
     </div>
 
-    <p-button
-      size="small"
-      severity="warning"
-      pTooltip="Undo"
-      tooltipPosition="top"
-      styleClass="w-full h-full"
-      [icon]="PrimeIcons.REPLAY"
-      (click)="undo()"
-    ></p-button>
-
-    <p-button
-      size="small"
-      severity="warning"
-      pTooltip="Redo"
-      tooltipPosition="top"
-      styleClass="w-full h-full"
-      [icon]="PrimeIcons.REFRESH"
-      (click)="redo()"
-    ></p-button>
-
-    <p-button
-      size="small"
-      styleClass="w-full h-full"
-      pTooltip="Compact Format"
-      tooltipPosition="top"
-      severity="help"
-      [icon]="PrimeIcons.SYNC"
-      [disabled]="control.invalid"
-      (click)="formatInputCompact()"
-    ></p-button>
-
-    <p-button
-    size="small"
-    styleClass="w-full h-full"
-    pTooltip="Pretty Format"
-    tooltipPosition="top"
-    severity="help"
-    [icon]="PrimeIcons.SPARKLES"
-    [disabled]="control.invalid"
-    (click)="formatInputPretty()"
-  ></p-button>
-
-    <p-button
-      size="small"
-      styleClass="text-nowrap w-full h-full"
-      severity="success"
-      pTooltip="Save Changes"
-      tooltipPosition="top"
-      [icon]="(countdown$ | async) === 0 ? PrimeIcons.SAVE : null"
-      [disabled]="suppressSave$ | async"
-      (click)="save()"
+    <div
+      class="h-full flex items-center justify-center py-1 rounded-md w-[100px] transition duration-500 cursor-default"
+      [pTooltip]="tooltipContent"
+      [tooltipDisabled]="control.valid"
+      tooltipPosition="bottom"
+      [ngClass]="{
+        'text-red-300 bg-red-700': control.invalid,
+        'text-green-300 bg-green-700': control.valid,
+        'text-blue-300 bg-blue-700': control.pending
+      }"
     >
-      @if (countdown$ | async; as countdown) {
-        {{ countdown }}
+      @if (control.invalid) {
+        Invalid
+      } @else if (control.pending) {
+        Validating
+      } @else {
+        Valid
       }
-    </p-button>
+    </div>
   </div>
-  <div
-    class="h-full flex items-center justify-center py-1 rounded-md w-[100px] transition duration-500 cursor-default"
-    [pTooltip]="tooltipContent"
-    [tooltipDisabled]="control.valid"
-    tooltipPosition="bottom"
-    [ngClass]="{
-      'text-red-300 bg-red-700': control.invalid,
-      'text-green-300 bg-green-700': control.valid,
-      'text-blue-300 bg-blue-700': control.pending
-    }"
-  >
-    @if (control.invalid) {
-      Invalid
-    } @else if (control.pending) {
-      Validating
-    } @else {
-      Valid
-    }
-  </div>
+  <ngx-monaco-editor
+    class="!h-full"
+    [options]="editorOptions"
+    [formControl]="control"
+    (onInit)="editorInit()"
+  ></ngx-monaco-editor>
 </div>
-
-<ngx-monaco-editor
-  class="!h-full"
-  [options]="editorOptions"
-  [formControl]="control"
-  (onInit)="editorInit()"
-></ngx-monaco-editor>
 
 <ng-template #tooltipContent>
   <ul>

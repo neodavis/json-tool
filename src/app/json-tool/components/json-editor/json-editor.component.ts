@@ -37,6 +37,7 @@ export class JsonEditorComponent extends EditorBaseComponent {
 
   readonly PrimeIcons = PrimeIcons;
   readonly countdown$ = this.saveService.countdown;
+  readonly isSaving$ = this.saveService.isSaving;
 
   readonly stateSubject = new EditorStateSubject();
   readonly compactFormatter = new CompactFormatterStrategy();
@@ -85,7 +86,6 @@ export class JsonEditorComponent extends EditorBaseComponent {
     });
     this.saveService.currentState$
       .pipe(
-        take(1),
         tap((state) => this.control.setValue(state))
       )
       .subscribe()
