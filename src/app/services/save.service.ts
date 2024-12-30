@@ -1,68 +1,71 @@
 import { inject, Injectable } from '@angular/core';
-import { BehaviorSubject, timer } from 'rxjs';
-import { DbService } from './db.service';
+import { BehaviorSubject, catchError, EMPTY, from, map, of, switchMap, tap } from 'rxjs';
+import { AuthService } from './auth.service';
 import { DocumentType } from '../interfaces/document.interface';
+import { FirestoreService } from './firestore.service';
 
 @Injectable()
 export class SaveService {
-  private readonly dbService = inject(DbService);
-  private documentId: number = 0;
   private currentDocument = new BehaviorSubject<string>('');
+  private readonly auth = inject(AuthService);
+  private readonly firestore = inject(FirestoreService);
+  private documentType!: DocumentType;
 
-  readonly countdown = new BehaviorSubject<number>(0);
   readonly currentState$ = this.currentDocument.asObservable();
   readonly isSaving = new BehaviorSubject<boolean>(false);
+  readonly canSave$ = this.auth.user$.pipe(map(user => !!user));
+  readonly saveError$ = new BehaviorSubject<object | null>(null);
 
-  async initializeService(documentName: string): Promise<void> {
-    await this.dbService.initialize();
-    this.documentId = documentName.includes('Schema') ? 2 : 1;
+  initializeService(documentType: DocumentType) {
+    this.documentType = documentType;
 
-    this.dbService.getDocument(this.documentId).subscribe({
-      next: (doc) => {
-        if (doc?.content) {
-          this.currentDocument.next(doc.content);
-        } else {
-          this.initializeNewDocument();
-        }
-      },
-      error: () => this.initializeNewDocument()
-    });
-  }
-
-  private initializeNewDocument(): void {
-    this.currentDocument.next('');
-    this.saveState('');
-  }
-
-  saveState(content: string): void {
-    this.startCountdown(content);
-  }
-
-  startCountdown(content: string): void {
-    this.countdown.next(3);
-    this.isSaving.next(true);
-
-    timer(3000).subscribe(() => {
-      this.dbService.saveDocument({
-        id: this.documentId,
-        content: content,
-        type: this.documentId === 1 ? DocumentType.JSON : DocumentType.SCHEMA,
-        lastModified: new Date()
-      }).subscribe({
-        next: () => {
-          this.countdown.next(0);
-          this.isSaving.next(false);
-        },
-        error: () => {
-          this.handleSaveError();
-          this.isSaving.next(false);
-        }
+    this.auth.user$
+      .pipe(
+        switchMap(user => {
+          if (!user) {
+            this.currentDocument.next('');
+            return EMPTY;
+          }
+          
+          return from(this.firestore.getLastVersions(this.documentType, user.uid, 1))
+            .pipe(
+              map(snapshot => {
+                if (snapshot.empty) return '';
+                return snapshot.docs[0].data().content;
+              }),
+              catchError(error => {
+                console.error('Error loading initial data:', error);
+                return of('');
+              })
+            );
+        })
+      )
+      .subscribe(content => {
+        this.currentDocument.next(content);
       });
-    });
   }
 
-  private handleSaveError(): void {
-    // Handle save errors, maybe retry or show notification
-    this.countdown.next(-1);
+  async saveState(content: string) {
+    if (!this.auth.isAuthenticated()) return;
+    
+    this.isSaving.next(true);
+    try {
+      const user = this.auth.userSubject.value;
+      
+      const latestVersions = await this.firestore.getLastVersions(this.documentType, user!.uid, 1);
+      const latestVersion = latestVersions.docs[0]?.data();
+      
+      if (latestVersion && latestVersion.content === content) {
+        console.log('[Save Service] Content unchanged, skipping save');
+        return;
+      }
+  
+      await this.firestore.saveDocument(this.documentType, content, user!.uid);
+      this.saveError$.next(null);
+    } catch(error) {
+      this.saveError$.next(error as object);
+    } finally {
+      this.isSaving.next(false);
+    }
   }
 }

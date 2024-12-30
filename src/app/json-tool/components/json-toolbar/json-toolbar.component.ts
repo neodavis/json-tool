@@ -1,36 +1,44 @@
-import { Component, Input } from '@angular/core';
-import { FormControl, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, inject } from '@angular/core';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { InputTextModule } from 'primeng/inputtext';
-import { FileSelectEvent, FileUpload, FileUploadModule } from 'primeng/fileupload';
+import { FileUploadModule } from 'primeng/fileupload';
 import { TooltipModule } from 'primeng/tooltip';
 import { SelectButtonModule } from 'primeng/selectbutton';
+import { DialogService } from 'primeng/dynamicdialog';
+import { AuthService } from '../../../services/auth.service';
+import { AuthDialogComponent } from '../../../auth-dialog/auth-dialog.component';
+import { AsyncPipe, CommonModule } from '@angular/common';
 
-import { FileImportCommand } from '../../../commands/file-command';
 
 @Component({
   selector: 'app-json-toolbar',
   standalone: true,
   imports: [
+    CommonModule,
     InputTextModule,
     TooltipModule,
     ReactiveFormsModule,
     FileUploadModule,
     SelectButtonModule,
     FormsModule,
+    AsyncPipe,
   ],
   templateUrl: './json-toolbar.component.html',
+  providers: [DialogService]
 })
 export class JsonToolbarComponent {
-  @Input({required: true}) jsonInputControl: FormControl<null | string> = new FormControl('');
-  @Input({required: true}) schemaControl: FormControl<null | string> = new FormControl('');
+  protected auth = inject(AuthService);
+  private dialogService = inject(DialogService);
 
-  readonly fileNameControl = new FormControl<string>('New Document', [
-    Validators.minLength(1),
-    Validators.required
-  ]);
+  openAuthDialog() {
+    this.dialogService.open(AuthDialogComponent, {
+      header: 'Authentication',
+      width: '400px'
+    });
+  }
 
-  importFile(fileUploadEl: FileUpload, event: FileSelectEvent): void {
-    new FileImportCommand(this, fileUploadEl, event).execute();
+  async signOut() {
+    await this.auth.signOut();
   }
 }

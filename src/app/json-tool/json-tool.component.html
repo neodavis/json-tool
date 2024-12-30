@@ -1,4 +1,4 @@
-<app-json-toolbar [schemaControl]="schemaControl" [jsonInputControl]="jsonInputControl"></app-json-toolbar>
+<app-json-toolbar></app-json-toolbar>
 
 <p-splitter [minSizes]="[40, 40]" [gutterSize]="2" styleClass="h-[calc(100vh-70px)]">
   <ng-template pTemplate>
@@ -7,6 +7,7 @@
         class="block h-full"
         name="Schema"
         description="Provide the JSON Schema"
+        [type]="DocumentType.SCHEMA"
         [control]="schemaControl"
       ></app-json-editor>
     </div>
@@ -16,7 +17,8 @@
       <app-json-editor
         class="block h-full"
         name="JSON"
-        description="Insert JSON to test against the schema"
+        description="Insert JSON to test"
+        [type]="DocumentType.JSON"
         [control]="jsonInputControl"
       ></app-json-editor>
     </div>

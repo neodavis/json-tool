@@ -2,13 +2,13 @@ import { take, tap } from "rxjs";
 import { FileUpload, FileSelectEvent } from "primeng/fileupload";
 import { fromPromise } from "rxjs/internal/observable/innerFrom";
 
-import { JsonToolbarComponent } from "../json-tool/components/json-toolbar/json-toolbar.component";
 import { LoggerCommand } from "./logger-command";
 import { BaseCommand } from "./base-command";
+import { JsonEditorComponent } from '../json-tool/components/json-editor/json-editor.component';
 
 export class FileImportCommand implements BaseCommand {
   constructor(
-    private toolbar: JsonToolbarComponent,
+    private editor: JsonEditorComponent,
     private fileUpload: FileUpload,
     private event: FileSelectEvent,
   ) {
@@ -26,11 +26,11 @@ export class FileImportCommand implements BaseCommand {
       const txtTypeIndex = file.name.lastIndexOf('.txt');
       const nameWithoutType = file.name.slice(0, Math.max(txtTypeIndex, jsonTypeIndex));
 
-      new FileNameUpdateCommand(this.toolbar, nameWithoutType).execute();
+      new FileNameUpdateCommand(this.editor, nameWithoutType).execute();
 
       fromPromise(text).pipe(
         take(1),
-        tap((content) => this.toolbar.jsonInputControl.setValue(content))
+        tap((content) => this.editor.control.setValue(content))
       ).subscribe();
     }
   }
@@ -38,13 +38,13 @@ export class FileImportCommand implements BaseCommand {
 
 export class FileNameUpdateCommand implements BaseCommand {
   constructor(
-    private toolbar: JsonToolbarComponent,
+    private editor: JsonEditorComponent,
     private fileName: string,
   ) {
   }
 
   execute(): void {
     new LoggerCommand('Command', 'Executing File Name Update Command').execute();
-    this.toolbar.fileNameControl.setValue(this.fileName);
+    this.editor.fileNameControl.setValue(this.fileName);
   }
 }

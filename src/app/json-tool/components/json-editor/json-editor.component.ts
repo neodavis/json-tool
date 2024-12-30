@@ -1,12 +1,12 @@
 import { ChangeDetectionStrategy, Component, inject, Input } from '@angular/core';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 
 import { EditorComponent } from 'ngx-monaco-editor-v2';
 import { TooltipModule } from 'primeng/tooltip';
 import { PrimeIcons } from 'primeng/api';
 import { Button } from 'primeng/button';
-import { BehaviorSubject, debounceTime, distinctUntilChanged, filter, skip, take, tap } from 'rxjs';
+import { BehaviorSubject, debounceTime, distinctUntilChanged, filter, skip, skipUntil, skipWhile, take, tap } from 'rxjs';
 
 import { UndoRedoService } from '../../../services/undo-redo.service';
 import { CompactFormatterStrategy } from '../../../strategies/compact-formatter-strategy';
@@ -17,33 +17,52 @@ import { EditorBaseComponent } from '../editor-base/editor-base.component';
 import { FormatCommand, SaveCommand } from '../../../commands/editor-command';
 import { PrettyFormatterStrategy } from '../../../strategies/pretty-formatter-strategy';
 import { ThemeChangeSubject } from '../../../observers/theme-observer';
+import { FileSelectEvent, FileUpload, FileUploadModule } from 'primeng/fileupload';
+import { InputTextModule } from 'primeng/inputtext';
+import { FileImportCommand } from '../../../commands/file-command';
+import { DocumentType } from '../../../interfaces/document.interface';
+import { AuthService } from '../../../services/auth.service';
+import { HistoryModalComponent } from '../../../history-modal/history-modal.component';
+import { DialogService } from 'primeng/dynamicdialog';
 
 @Component({
   selector: 'app-json-editor',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, EditorComponent, TooltipModule, Button],
+  imports: [CommonModule, ReactiveFormsModule, EditorComponent, TooltipModule, Button, FileUploadModule, InputTextModule],
   templateUrl: './json-editor.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [SaveService, UndoRedoService],
+  providers: [SaveService, UndoRedoService, DialogService],
 })
 export class JsonEditorComponent extends EditorBaseComponent {
   @Input({required: true}) name!: string;
   @Input({required: true}) description!: string;
   @Input({required: true}) control!: FormControl;
+  @Input({required: true}) type!: DocumentType;
 
   readonly undoRedoService = inject(UndoRedoService);
   readonly saveService = inject(SaveService);
   readonly editorOptionsFlyweight = inject(EditorOptionsFlyweight);
+  readonly auth = inject(AuthService);
+  readonly dialogService = inject(DialogService);
 
   readonly PrimeIcons = PrimeIcons;
-  readonly countdown$ = this.saveService.countdown;
   readonly isSaving$ = this.saveService.isSaving;
+  readonly saveError$ = this.saveService.saveError$;
 
   readonly stateSubject = new EditorStateSubject();
   readonly compactFormatter = new CompactFormatterStrategy();
   readonly prettyFormatter = new PrettyFormatterStrategy();
   readonly themeSubject = new ThemeChangeSubject();
   readonly suppressSave$ = new BehaviorSubject<boolean>(true);
+
+  readonly fileNameControl = new FormControl<string>('New Document', [
+    Validators.minLength(1),
+    Validators.required
+  ]);
+
+  importFile(fileUploadEl: FileUpload, event: FileSelectEvent): void {
+    new FileImportCommand(this, fileUploadEl, event).execute();
+  }
 
   editorOptions = this.editorOptionsFlyweight.getOptions('json');
 
@@ -78,12 +97,18 @@ export class JsonEditorComponent extends EditorBaseComponent {
   }
 
   protected initializeServices(): void {
-    this.saveService.initializeService(this.name);
+    this.saveService.initializeService(this.type);
     this.initializeThemeObserver();
     this.undoRedoService.initialize(this.control.value || '');
-    this.stateSubject.subscribe({
-      next: () => this.suppressSave$.next(false)
-    });
+    this.saveService.canSave$
+      .pipe(
+        tap(canSave => this.suppressSave$.next(!canSave))
+      )
+      .subscribe();
+    this.stateSubject
+      .subscribe({
+        next: () => this.suppressSave$.next(false)
+      });
     this.saveService.currentState$
       .pipe(
         tap((state) => this.control.setValue(state))
@@ -102,13 +127,7 @@ export class JsonEditorComponent extends EditorBaseComponent {
       }),
       skip(1),
       distinctUntilChanged(),
-      tap((value) => this.saveService.startCountdown(value)),
-    ).subscribe();
-
-    this.control.valueChanges.pipe(
-      distinctUntilChanged(),
-      skip(1),
-      tap((value) => this.saveService.startCountdown(value)),
+      tap(() => this.saveService.saveState(this.control.value)),
     ).subscribe();
   }
 
@@ -140,5 +159,20 @@ export class JsonEditorComponent extends EditorBaseComponent {
 
   protected configureEditor(): void {
     this.control.updateValueAndValidity();
+  }
+
+  loadFromHistory() {
+    this.dialogService.open(HistoryModalComponent, {
+      header: 'Document History',
+      width: '70%',
+      data: {
+        type: this.type,
+        userId: this.auth.userSubject.value?.uid
+      }
+    }).onClose.subscribe((version: any) => {
+      if (version) {
+        this.control.setValue(version.content);
+      }
+    });  
   }
 }

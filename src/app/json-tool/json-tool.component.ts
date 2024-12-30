@@ -12,6 +12,7 @@ import { schemaValidatorGetter } from '../validators/schema.validator';
 import { JsonEditorComponent } from './components/json-editor/json-editor.component';
 import { JsonToolbarComponent } from './components/json-toolbar/json-toolbar.component';
 import { SchemaFlyweight } from '../flyweights/schema-flyweight';
+import { DocumentType } from '../interfaces/document.interface';
 
 @Component({
   selector: 'app-json-tool',
@@ -238,4 +239,6 @@ export class JsonToolComponent implements AfterViewInit {
       schemas
     });
   }
+
+  readonly DocumentType = DocumentType;
 }

@@ -1,25 +1,24 @@
 <div class="flex justify-between bg-[#2B3137] border border-black gap-5">
-  <div class="flex gap-2 py-3 mx-7 w-full">
-    <p-fileUpload
-      #uploadFile
-      pTooltip="Upload File"
-      tooltipPosition="top"
-      mode="basic"
-      accept=".txt, .json"
-      styleClass="w-full h-full"
-      (onSelect)="importFile(uploadFile, $event)"
-      [fileLimit]="1"
-    ></p-fileUpload>
+  <div class="flex items-center gap-2 py-3 mx-7 w-full">
+    <h3>JSON Tool</h3>
+  </div>
 
-    <input
-      pInputText
-      type="text"
-      class="form-control"
-      pTooltip="File Name"
-      [tooltipDisabled]="!fileNameControl.value"
-      tooltipPosition="top"
-      [formControl]="fileNameControl"
-      placeholder="File Name"
-    >
+  <div class="flex items-center gap-2 py-3 mx-7">
+    @if (auth.user$ | async; as user) {
+      {{ user.email }}
+      <p-button
+        label="Sign Out"
+        class="text-nowrap"
+        severity="secondary"
+        (onClick)="signOut()">
+      </p-button>
+    } @else {
+      <p-button
+        label="Sign In"
+        class="text-nowrap"
+        severity="secondary"
+        (onClick)="openAuthDialog()">
+      </p-button>
+    }
   </div>
 </div>
