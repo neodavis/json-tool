@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, Input, OnInit } from '@angular/core';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 
@@ -6,17 +6,14 @@ import { EditorComponent } from 'ngx-monaco-editor-v2';
 import { TooltipModule } from 'primeng/tooltip';
 import { PrimeIcons } from 'primeng/api';
 import { Button } from 'primeng/button';
-import { BehaviorSubject, debounceTime, distinctUntilChanged, filter, skip, skipUntil, skipWhile, take, tap } from 'rxjs';
+import { BehaviorSubject, debounceTime, distinctUntilChanged, filter, tap } from 'rxjs';
 
 import { UndoRedoService } from '../../../services/undo-redo.service';
 import { CompactFormatterStrategy } from '../../../strategies/compact-formatter-strategy';
 import { SaveService } from '../../../services/save.service';
-import { EditorOptionsFlyweight } from '../../../flyweights/editor-options-flyweight';
 import { EditorStateSubject } from '../../../observers/editor-observer';
-import { EditorBaseComponent } from '../editor-base/editor-base.component';
-import { LoadHistoryCommand, SaveCommand } from '../../../commands/editor-command';
+import { LoadHistoryCommand } from '../../../commands/editor-command';
 import { PrettyFormatterStrategy } from '../../../strategies/pretty-formatter-strategy';
-import { ThemeChangeSubject } from '../../../observers/theme-observer';
 import { FileSelectEvent, FileUpload, FileUploadModule } from 'primeng/fileupload';
 import { InputTextModule } from 'primeng/inputtext';
 import { FileImportCommand } from '../../../commands/file-command';
@@ -35,7 +32,7 @@ import { HistoryModalComponent } from '../../../history-modal/history-modal.comp
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [SaveService, UndoRedoService, DialogService],
 })
-export class JsonEditorComponent extends EditorBaseComponent {
+export class JsonEditorComponent implements OnInit {
   @Input({required: true}) name!: string;
   @Input({required: true}) description!: string;
   @Input({required: true}) control!: FormControl;
@@ -43,7 +40,6 @@ export class JsonEditorComponent extends EditorBaseComponent {
 
   readonly undoRedoService = inject(UndoRedoService);
   readonly saveService = inject(SaveService);
-  readonly editorOptionsFlyweight = inject(EditorOptionsFlyweight);
   readonly auth = inject(AuthService);
   readonly dialogService = inject(DialogService);
   private readonly commandInvoker = inject(CommandInvoker);
@@ -55,7 +51,6 @@ export class JsonEditorComponent extends EditorBaseComponent {
   readonly stateSubject = new EditorStateSubject();
   readonly compactFormatter = new CompactFormatterStrategy();
   readonly prettyFormatter = new PrettyFormatterStrategy();
-  readonly themeSubject = new ThemeChangeSubject();
   readonly suppressSave$ = new BehaviorSubject<boolean>(true);
 
   readonly fileNameControl = new FormControl<string>('New Document', [
@@ -63,19 +58,34 @@ export class JsonEditorComponent extends EditorBaseComponent {
     Validators.required
   ]);
 
+  readonly editorOptions = {
+    automaticLayout: true,
+    language: 'json',
+    minimap: { enabled: false },
+    scrollBeyondLastLine: false,
+    theme: 'githubDark',
+  };
+
+  ngOnInit() {
+    this.setupSubscriptions();
+    this.initializeServices();
+    this.configureEditor();
+  }
+
   importFile(fileUploadEl: FileUpload, event: FileSelectEvent): void {
     this.commandInvoker.execute(new FileImportCommand(this, fileUploadEl, event));
   }
 
-  editorOptions = this.editorOptionsFlyweight.getOptions('json');
-
   undo(): void {
-    this.undoRedoService.undo();
+    const previousState = this.undoRedoService.undo();
+    if (previousState !== null) {
+      this.control.setValue(previousState);
+    }
   }
 
   redo(): void {
     const nextState = this.undoRedoService.redo();
-    if (nextState) {
+    if (nextState !== null) {
       this.control.setValue(nextState);
     }
   }
@@ -98,14 +108,8 @@ export class JsonEditorComponent extends EditorBaseComponent {
     ));
   }
 
-  changeTheme(theme: string): void {
-    this.themeSubject.next(theme);
-  }
-
   protected initializeServices(): void {
     this.saveService.initializeService(this.type);
-    this.initializeThemeObserver();
-    this.undoRedoService.initialize(this.control.value || '');
     this.saveService.canSave$
       .pipe(
         tap(canSave => this.suppressSave$.next(!canSave))
@@ -117,7 +121,10 @@ export class JsonEditorComponent extends EditorBaseComponent {
       });
     this.saveService.currentState$
       .pipe(
-        tap((state) => this.control.setValue(state))
+        tap((state) => {
+          this.control.setValue(state);
+          this.undoRedoService.initialize(this.control.value || '');
+        })
       )
       .subscribe()
   }
@@ -128,35 +135,10 @@ export class JsonEditorComponent extends EditorBaseComponent {
       filter(Boolean),
       distinctUntilChanged(),
       tap(value => {
+        this.undoRedoService.addState(value);
         this.saveService.saveState(value);
       }),
     ).subscribe();
-  }
-
-  save(): void {
-    this.commandInvoker.execute(new SaveCommand(this));
-    this.suppressSave$.next(true);
-  }
-
-  private initializeThemeObserver(): void {
-    this.themeSubject.subscribe({
-      next: (themeName) => {
-        switch (themeName) {
-          case 'changed':
-            window.monaco.editor.setTheme(themeName);
-            break;
-          case 'error':
-            window.monaco.editor.setTheme('githubDark');
-            break;
-          case 'optionsUpdated':
-            this.editorOptions = {
-              ...this.editorOptions,
-              theme: themeName,
-            };
-            break;
-        }
-      }
-    });
   }
 
   protected configureEditor(): void {
@@ -171,10 +153,10 @@ export class JsonEditorComponent extends EditorBaseComponent {
         type: this.type,
         userId: this.auth.userSubject.value?.uid
       }
-    }).onClose.subscribe((content: string) => {
+    }).onClose.subscribe((content) => {
       if (content) {
-        this.commandInvoker.execute(new LoadHistoryCommand(this, content));
+        this.commandInvoker.execute(new LoadHistoryCommand(this, content.content));
       }
-    });  
+    });
   }
 }

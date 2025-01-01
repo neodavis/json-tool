@@ -2,6 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, Auth, User } from 'firebase/auth';
 import { FirebaseApp } from '@angular/fire/app';
+import { ErrorHandlerService } from './error-handler.service';
 
 @Injectable({
   providedIn: 'root'
@@ -12,6 +13,7 @@ export class AuthService {
   readonly user$ = this.userSubject.asObservable();
 
   private readonly auth!: Auth;
+  private readonly errorHandler = inject(ErrorHandlerService);
 
   constructor() {
     const app = inject(FirebaseApp);
@@ -23,15 +25,30 @@ export class AuthService {
   }
 
   async signIn(email: string, password: string) {
-    return signInWithEmailAndPassword(this.auth, email, password);
+    try {
+      return signInWithEmailAndPassword(this.auth, email, password);
+    } catch (error) {
+      this.errorHandler.handleError(error);
+      throw error;
+    }
   }
 
   async signUp(email: string, password: string) {
-    return createUserWithEmailAndPassword(this.auth, email, password);
+    try {
+      return createUserWithEmailAndPassword(this.auth, email, password);
+    } catch (error) {
+      this.errorHandler.handleError(error);
+      throw error;
+    }
   }
 
   async signOut() {
-    return signOut(this.auth);
+    try {
+      return signOut(this.auth);
+    } catch (error) {
+      this.errorHandler.handleError(error);
+      throw error;
+    }
   }
 
   isAuthenticated() {

@@ -34,6 +34,7 @@
       styleClass="w-full h-full"
       [icon]="PrimeIcons.REPLAY"
       (click)="undo()"
+      [disabled]="!undoRedoService.canUndo()"
     ></p-button>
 
     <p-button
@@ -44,6 +45,7 @@
       styleClass="w-full h-full"
       [icon]="PrimeIcons.REFRESH"
       (click)="redo()"
+      [disabled]="!undoRedoService.canRedo()"
     ></p-button>
 
     <p-button

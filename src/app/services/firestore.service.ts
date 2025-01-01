@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Firestore, collection, query, limit, orderBy, addDoc, getDocs } from '@angular/fire/firestore';
 import { DocumentType } from '../interfaces/document.interface';
-import { startAfter, where } from 'firebase/firestore';
+import { where } from 'firebase/firestore';
 
 @Injectable({ providedIn: 'root' })
 export class FirestoreService {

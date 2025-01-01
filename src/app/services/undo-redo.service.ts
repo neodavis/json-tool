@@ -4,32 +4,34 @@ import { Injectable } from '@angular/core';
 export class UndoRedoService {
   private undoStack: string[] = [];
   private redoStack: string[] = [];
+  private currentState: string = '';
 
   addState(state: string) {
-    if (this.undoStack[this.undoStack.length - 1] !== state) {
-      this.undoStack.push(state);
-      this.redoStack = [];
-    }
+    // Don't add if state hasn't changed
+    if (this.currentState === state) return;
+    
+    this.undoStack.push(this.currentState);
+    this.currentState = state;
+    // Clear redo stack when new state is added
+    this.redoStack = [];
   }
 
   undo(): string | null {
-    if (this.undoStack.length > 1) {
-      const currentState = this.undoStack.pop();
-      if (currentState) {
-        this.redoStack.push(currentState);
-      }
-      return this.undoStack[this.undoStack.length - 1];
+    if (this.undoStack.length > 0) {
+      const previousState = this.undoStack.pop()!;
+      this.redoStack.push(this.currentState);
+      this.currentState = previousState;
+      return previousState;
     }
     return null;
   }
 
   redo(): string | null {
     if (this.redoStack.length > 0) {
-      const nextState = this.redoStack.pop();
-      if (nextState) {
-        this.undoStack.push(nextState);
-      }
-      return nextState as string | null;
+      const nextState = this.redoStack.pop()!;
+      this.undoStack.push(this.currentState);
+      this.currentState = nextState;
+      return nextState;
     }
     return null;
   }
@@ -37,10 +39,19 @@ export class UndoRedoService {
   clear() {
     this.undoStack = [];
     this.redoStack = [];
+    this.currentState = '';
   }
 
   initialize(state: string) {
     this.clear();
-    this.addState(state);
+    this.currentState = state;
+  }
+
+  canUndo(): boolean {
+    return this.undoStack.length > 0;
+  }
+
+  canRedo(): boolean {
+    return this.redoStack.length > 0;
   }
 }

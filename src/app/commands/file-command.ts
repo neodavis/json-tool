@@ -6,7 +6,6 @@ import { BaseCommand } from "./base-command";
 import { JsonEditorComponent } from '../json-tool/components/json-editor/json-editor.component';
 
 export class FileImportCommand implements BaseCommand {
-
   constructor(
     private editor: JsonEditorComponent,
     private fileUpload: FileUpload,

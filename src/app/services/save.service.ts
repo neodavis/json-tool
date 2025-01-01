@@ -3,12 +3,14 @@ import { BehaviorSubject, catchError, EMPTY, from, map, of, switchMap, tap } fro
 import { AuthService } from './auth.service';
 import { DocumentType } from '../interfaces/document.interface';
 import { FirestoreService } from './firestore.service';
+import { ErrorHandlerService } from './error-handler.service';
 
 @Injectable()
 export class SaveService {
   private currentDocument = new BehaviorSubject<string>('');
   private readonly auth = inject(AuthService);
   private readonly firestore = inject(FirestoreService);
+  private readonly errorHandler = inject(ErrorHandlerService);
   private documentType!: DocumentType;
 
   readonly currentState$ = this.currentDocument.asObservable();
@@ -26,7 +28,7 @@ export class SaveService {
             this.currentDocument.next('');
             return EMPTY;
           }
-          
+
           return from(this.firestore.getLastVersions(this.documentType, user.uid, 1))
             .pipe(
               map(snapshot => {
@@ -47,22 +49,23 @@ export class SaveService {
 
   async saveState(content: string) {
     if (!this.auth.isAuthenticated()) return;
-    
+
     this.isSaving.next(true);
     try {
       const user = this.auth.userSubject.value;
-      
+
       const latestVersions = await this.firestore.getLastVersions(this.documentType, user!.uid, 1);
       const latestVersion = latestVersions.docs[0]?.data();
-      
+
       if (latestVersion && latestVersion.content === content) {
         console.log('[Save Service] Content unchanged, skipping save');
         return;
       }
-  
+
       await this.firestore.saveDocument(this.documentType, content, user!.uid);
       this.saveError$.next(null);
     } catch(error) {
+      this.errorHandler.handleError(error);
       this.saveError$.next(error as object);
     } finally {
       this.isSaving.next(false);

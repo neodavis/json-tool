@@ -4,9 +4,9 @@ import { provideAnimations } from '@angular/platform-browser/animations';
 
 import { MonacoEditorModule, provideMonacoEditor } from 'ngx-monaco-editor-v2';
 import { editor, languages, Uri } from 'monaco-editor';
+import * as githubDark from 'monaco-themes/themes/GitHub Dark.json';
 
 import { SHOW_LOGS } from './tokens/logger.token';
-import { EditorThemeFlyweight } from './flyweights/editor-theme-flyweight';
 import { DEFAULT_THEME } from './tokens/theme.token';
 import { provideFirebaseApp } from '@angular/fire/app';
 import { getFirestore, provideFirestore } from '@angular/fire/firestore';
@@ -45,14 +45,9 @@ export const appConfig: ApplicationConfig = {
       MonacoEditorModule.forRoot({
         onMonacoLoad: () => {
           const injector = window.__INJECTOR__;
-          const themeFlyweight = injector.get(EditorThemeFlyweight);
           const defaultTheme = injector.get(DEFAULT_THEME);
-          themeFlyweight.getValue().forEach((theme, name) => {
 
-            window.monaco.editor.defineTheme(name, theme);
-          });
-
-
+          window.monaco.editor.defineTheme('githubDark', githubDark as editor.IStandaloneThemeData);
           window.monaco.editor.setTheme(defaultTheme);
         }
       })

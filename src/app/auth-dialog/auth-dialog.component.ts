@@ -5,6 +5,7 @@ import { AuthService } from '../services/auth.service';
 import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
+import { ErrorHandlerService } from '../services/error-handler.service';
 
 @Component({
   selector: 'app-auth-dialog',
@@ -56,7 +57,8 @@ export class AuthDialogComponent {
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private ref: DynamicDialogRef
+    private ref: DynamicDialogRef,
+    private errorHandler: ErrorHandlerService,
   ) {
     this.form = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
@@ -72,7 +74,7 @@ export class AuthDialogComponent {
         await this.authService.signIn(email, password);
         this.ref.close(true);
       } catch (error) {
-        console.error(error);
+        this.errorHandler.handleError(error);
       } finally {
         this.signInLoading = false;
       }
@@ -87,7 +89,7 @@ export class AuthDialogComponent {
         await this.authService.signUp(email, password);
         this.ref.close(true);
       } catch (error) {
-        console.error(error);
+        this.errorHandler.handleError(error);
       } finally {
         this.signUpLoading = false;
       }

@@ -11,7 +11,6 @@ import { SaveService } from '../services/save.service';
 import { schemaValidatorGetter } from '../validators/schema.validator';
 import { JsonEditorComponent } from './components/json-editor/json-editor.component';
 import { JsonToolbarComponent } from './components/json-toolbar/json-toolbar.component';
-import { SchemaFlyweight } from '../flyweights/schema-flyweight';
 import { DocumentType } from '../interfaces/document.interface';
 
 @Component({
@@ -24,8 +23,6 @@ import { DocumentType } from '../interfaces/document.interface';
 export class JsonToolComponent implements AfterViewInit {
   readonly schemaControl = new FormControl<string>('', null, schemaValidatorGetter('inmemory://model/1'));
   readonly jsonInputControl = new FormControl<string>('', null, schemaValidatorGetter('inmemory://model/2'));
-
-  private schemaFlyweight = inject(SchemaFlyweight)
 
   // TODO: move into const file
   private readonly schema = {
@@ -225,12 +222,9 @@ export class JsonToolComponent implements AfterViewInit {
       .subscribe()
   }
 
-  setSchema(schema: JSONSchema | null) {
-    const baseSchema = this.schemaFlyweight.getSchema('base', this.schema);
-    const customSchema = schema ? this.schemaFlyweight.getSchema('custom', schema) : null;
-
+  setSchema(customSchema: JSONSchema | null) {
     const schemas = [
-      {uri: 'inmemory://model/1', fileMatch: ['inmemory://model/1'], schema: baseSchema},
+      {uri: 'inmemory://model/1', fileMatch: ['inmemory://model/1'], schema: this.schema},
       ...(customSchema ? [{uri: 'inmemory://model/2', fileMatch: ['inmemory://model/2'], schema: customSchema}] : [])
     ];
 
