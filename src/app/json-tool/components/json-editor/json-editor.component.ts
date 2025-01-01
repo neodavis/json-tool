@@ -14,7 +14,7 @@ import { SaveService } from '../../../services/save.service';
 import { EditorOptionsFlyweight } from '../../../flyweights/editor-options-flyweight';
 import { EditorStateSubject } from '../../../observers/editor-observer';
 import { EditorBaseComponent } from '../editor-base/editor-base.component';
-import { FormatCommand, SaveCommand } from '../../../commands/editor-command';
+import { LoadHistoryCommand, SaveCommand } from '../../../commands/editor-command';
 import { PrettyFormatterStrategy } from '../../../strategies/pretty-formatter-strategy';
 import { ThemeChangeSubject } from '../../../observers/theme-observer';
 import { FileSelectEvent, FileUpload, FileUploadModule } from 'primeng/fileupload';
@@ -22,8 +22,10 @@ import { InputTextModule } from 'primeng/inputtext';
 import { FileImportCommand } from '../../../commands/file-command';
 import { DocumentType } from '../../../interfaces/document.interface';
 import { AuthService } from '../../../services/auth.service';
-import { HistoryModalComponent } from '../../../history-modal/history-modal.component';
 import { DialogService } from 'primeng/dynamicdialog';
+import { CommandInvoker } from '../../../commands/command-invoker';
+import { DocumentFormatCommand } from '../../../commands/document-command';
+import { HistoryModalComponent } from '../../../history-modal/history-modal.component';
 
 @Component({
   selector: 'app-json-editor',
@@ -44,6 +46,7 @@ export class JsonEditorComponent extends EditorBaseComponent {
   readonly editorOptionsFlyweight = inject(EditorOptionsFlyweight);
   readonly auth = inject(AuthService);
   readonly dialogService = inject(DialogService);
+  private readonly commandInvoker = inject(CommandInvoker);
 
   readonly PrimeIcons = PrimeIcons;
   readonly isSaving$ = this.saveService.isSaving;
@@ -61,16 +64,13 @@ export class JsonEditorComponent extends EditorBaseComponent {
   ]);
 
   importFile(fileUploadEl: FileUpload, event: FileSelectEvent): void {
-    new FileImportCommand(this, fileUploadEl, event).execute();
+    this.commandInvoker.execute(new FileImportCommand(this, fileUploadEl, event));
   }
 
   editorOptions = this.editorOptionsFlyweight.getOptions('json');
 
   undo(): void {
-    const previousState = this.undoRedoService.undo();
-    if (previousState) {
-      this.control.setValue(previousState);
-    }
+    this.undoRedoService.undo();
   }
 
   redo(): void {
@@ -85,11 +85,17 @@ export class JsonEditorComponent extends EditorBaseComponent {
   }
 
   formatInputCompact(): void {
-    new FormatCommand(this, this.compactFormatter).execute();
+    this.commandInvoker.execute(new DocumentFormatCommand(
+      this.control,
+      this.compactFormatter.format.bind(this.compactFormatter)
+    ));
   }
 
   formatInputPretty(): void {
-    new FormatCommand(this, this.prettyFormatter).execute();
+    this.commandInvoker.execute(new DocumentFormatCommand(
+      this.control,
+      this.prettyFormatter.format.bind(this.prettyFormatter)
+    ));
   }
 
   changeTheme(theme: string): void {
@@ -120,19 +126,15 @@ export class JsonEditorComponent extends EditorBaseComponent {
     this.control.valueChanges.pipe(
       debounceTime(300),
       filter(Boolean),
-      tap(value => {
-        this.stateSubject.next(value);
-        this.undoRedoService.addState(value);
-        this.suppressSave$.next(false);
-      }),
-      skip(1),
       distinctUntilChanged(),
-      tap(() => this.saveService.saveState(this.control.value)),
+      tap(value => {
+        this.saveService.saveState(value);
+      }),
     ).subscribe();
   }
 
   save(): void {
-    new SaveCommand(this).execute();
+    this.commandInvoker.execute(new SaveCommand(this));
     this.suppressSave$.next(true);
   }
 
@@ -169,9 +171,9 @@ export class JsonEditorComponent extends EditorBaseComponent {
         type: this.type,
         userId: this.auth.userSubject.value?.uid
       }
-    }).onClose.subscribe((version: any) => {
-      if (version) {
-        this.control.setValue(version.content);
+    }).onClose.subscribe((content: string) => {
+      if (content) {
+        this.commandInvoker.execute(new LoadHistoryCommand(this, content));
       }
     });  
   }

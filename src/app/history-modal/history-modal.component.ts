@@ -52,6 +52,10 @@ export class HistoryModalComponent {
     this.loadVersions();
   }
 
+  getContentString(content: any) {
+    return JSON.stringify(content);
+  }
+
   async loadVersions() {
     const { type, userId } = this.config.data;
     const snapshot = await this.firestore.getLastVersions(type, userId);

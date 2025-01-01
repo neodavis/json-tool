@@ -1,6 +1,5 @@
 import { Injectable } from "@angular/core";
 
-import { LoggerCommand } from "../commands/logger-command";
 import { Flyweight } from "./base-flyweight";
 
 @Injectable({ providedIn: 'root' })
@@ -9,18 +8,15 @@ export class SchemaFlyweight implements Flyweight<Map<string, any>> {
 
   getSchema(schemaId: string, schema: any): any {
     if (!this.instances.has(schemaId)) {
-      new LoggerCommand('Flyweight', `Creating new schema instance for ${schemaId}`).execute();
       this.instances.set(schemaId, schema);
       return schema;
     }
 
     const existingSchema = this.instances.get(schemaId);
     if (this.areSchemasEqual(existingSchema, schema)) {
-      new LoggerCommand('Flyweight', `Schema ${schemaId} is identical, reusing existing instance`).execute();
       return existingSchema;
     }
 
-    new LoggerCommand('Flyweight', `Schema ${schemaId} changed, updating instance`).execute();
     this.instances.set(schemaId, schema);
     return schema;
   }

@@ -11,6 +11,7 @@ import { DEFAULT_THEME } from './tokens/theme.token';
 import { provideFirebaseApp } from '@angular/fire/app';
 import { getFirestore, provideFirestore } from '@angular/fire/firestore';
 import { initializeApp } from 'firebase/app';
+import { MessageService } from 'primeng/api';
 
 declare global {
   interface Window {
@@ -70,5 +71,6 @@ export const appConfig: ApplicationConfig = {
     },
     { provide: DEFAULT_THEME, useValue: 'githubDark' },
     { provide: SHOW_LOGS, useValue: true },
+    MessageService
   ]
 };
